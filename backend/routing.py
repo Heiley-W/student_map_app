@@ -1,6 +1,6 @@
 """Shortest-path routing over the graph produced by the PDF extractor."""
 
-import math
+from datetime import datetime, time
 
 import networkx as nx
 
@@ -61,7 +61,7 @@ def _normalise_graph(map_data):
     return nodes, edges
 
 
-def _build_graph(map_data, wheelchair_required, has_id_card, transfers):
+def _build_graph(map_data, wheelchair_required, card_type, local_time, transfers):
     nodes, edges = _normalise_graph(map_data)
     graph = nx.Graph()
 
@@ -86,9 +86,9 @@ def _build_graph(map_data, wheelchair_required, has_id_card, transfers):
             continue
         if edge.get("blocked") is True:
             continue
-        if wheelchair_required and edge.get("wheelchair_accessible") is not True:
+        if wheelchair_required and edge.get("wheelchair_accessible") is False:
             continue
-        if not has_id_card and edge.get("requires_id_card") is True:
+        if not _card_can_use_edge(edge, card_type, local_time):
             continue
 
         graph.add_edge(source, target, edge_id=edge.get("id"), transfer=None)
@@ -110,10 +110,10 @@ def _build_graph(map_data, wheelchair_required, has_id_card, transfers):
             continue
         kind = transfer["kind"]
         if wheelchair_required and (
-            kind != "lift" or transfer.get("wheelchair_accessible") is not True
+            kind != "lift" or transfer.get("wheelchair_accessible") is False
         ):
             continue
-        if not has_id_card and transfer.get("requires_id_card") is True:
+        if not _card_can_use_edge(transfer, card_type, local_time):
             continue
 
         graph.add_edge(
@@ -127,6 +127,16 @@ def _build_graph(map_data, wheelchair_required, has_id_card, transfers):
         )
 
     return graph
+
+
+def _card_can_use_edge(edge, card_type, local_time):
+    if edge.get("requires_id_card") is not True:
+        return True
+    if card_type == "visitor":
+        return False
+    if card_type == "student" and local_time >= time(18, 0):
+        return False
+    return True
 
 
 def _route_segments(graph, node_ids):
@@ -202,17 +212,23 @@ def find_route(
     start,
     destination,
     wheelchair_required=False,
-    has_id_card=False,
+    card_type="visitor",
+    local_time=None,
     transfers=None,
 ):
     """Return the shortest route over walkable graph edges and explicit transfers."""
     if transfers is None:
         transfers = map_data.get("transfers", [])
+    if local_time is None:
+        local_time = datetime.now().time()
+    if card_type not in {"student", "postgrad", "staff", "visitor"}:
+        raise ValueError(f"Unsupported card type: {card_type}")
 
     graph = _build_graph(
         map_data,
         wheelchair_required=wheelchair_required,
-        has_id_card=has_id_card,
+        card_type=card_type,
+        local_time=local_time,
         transfers=transfers,
     )
     if start not in graph or destination not in graph:

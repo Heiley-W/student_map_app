@@ -1,6 +1,9 @@
 import json
+import tempfile
 import unittest
+from datetime import time
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -12,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[2]
 MAP_PATH = ROOT / "gemini-map" / "map_graph.json"
 TRANSFER_PATH = Path(__file__).resolve().parents[1] / "data" / "floor_transfers.json"
 NODE_MAP_PATH = ROOT / "frontend" / "route-node-map.json"
+CHECKPOINT_MAP_PATH = ROOT / "gemini-map" / "map_graph.checkpoint.json"
 
 
 class RoutingTests(unittest.TestCase):
@@ -45,7 +49,7 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(result["floor_changes"], 1)
         self.assertTrue(any(edge["floor_change"] for edge in result["edge_ids"]))
 
-    def test_step_free_mode_rejects_unknown_walkway_accessibility(self):
+    def test_step_free_mode_allows_unknown_walkway_accessibility(self):
         result = find_route(
             self.map_data,
             "p001_ground_floor_room_e20",
@@ -54,7 +58,7 @@ class RoutingTests(unittest.TestCase):
             transfers=self.transfers,
         )
 
-        self.assertEqual(result["status"], "no_route")
+        self.assertEqual(result["status"], "ok")
 
     def test_frontend_room_and_connector_mappings_exist_in_graph(self):
         config = json.loads(NODE_MAP_PATH.read_text(encoding="utf-8"))
@@ -101,7 +105,41 @@ class RoutingTests(unittest.TestCase):
 
         self.assertEqual(find_route(graph, "a", "b")["status"], "no_route")
         self.assertEqual(
-            find_route(graph, "a", "b", has_id_card=True)["status"],
+            find_route(graph, "a", "b", card_type="staff")["status"],
+            "ok",
+        )
+        self.assertEqual(
+            find_route(graph, "a", "b", card_type="visitor")["status"],
+            "no_route",
+        )
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                card_type="student",
+                local_time=time(17, 59),
+            )["status"],
+            "ok",
+        )
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                card_type="student",
+                local_time=time(18, 0),
+            )["status"],
+            "no_route",
+        )
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                card_type="postgrad",
+                local_time=time(22, 0),
+            )["status"],
             "ok",
         )
         graph["edges"][0]["wheelchair_accessible"] = None
@@ -110,8 +148,57 @@ class RoutingTests(unittest.TestCase):
                 graph,
                 "a",
                 "b",
-                has_id_card=True,
+                card_type="staff",
                 wheelchair_required=True,
+            )["status"],
+            "ok",
+        )
+        graph["edges"][0]["wheelchair_accessible"] = False
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                card_type="staff",
+                wheelchair_required=True,
+            )["status"],
+            "no_route",
+        )
+
+    def test_step_free_mode_treats_null_transfer_accessibility_as_accessible(self):
+        graph = {
+            "nodes": [
+                {"id": "a", "name": "A", "kind": "lift", "page": 1},
+                {"id": "b", "name": "B", "kind": "lift", "page": 2},
+            ],
+            "edges": [],
+        }
+        transfer = {
+            "from": "a",
+            "to": "b",
+            "group": "Lift",
+            "kind": "lift",
+            "wheelchair_accessible": None,
+        }
+
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                wheelchair_required=True,
+                transfers=[transfer],
+            )["status"],
+            "ok",
+        )
+        transfer["wheelchair_accessible"] = False
+        self.assertEqual(
+            find_route(
+                graph,
+                "a",
+                "b",
+                wheelchair_required=True,
+                transfers=[transfer],
             )["status"],
             "no_route",
         )
@@ -178,6 +265,99 @@ class RoutingApiTests(unittest.TestCase):
             response.headers["access-control-allow-origin"],
             "http://localhost:5500",
         )
+
+    def test_admin_node_status_put_is_allowed_by_cors(self):
+        response = self.client.options(
+            "/admin/node-status",
+            headers={
+                "Origin": "http://localhost:5500",
+                "Access-Control-Request-Method": "PUT",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "PUT",
+            response.headers["access-control-allow-methods"],
+        )
+
+    def test_paged_checkpoint_map_is_served_and_routable(self):
+        with patch.object(main, "MAP_PATH", CHECKPOINT_MAP_PATH):
+            catalog = self.client.get("/map")
+            route = self.client.post(
+                "/route",
+                json={
+                    "start": "p001_ground_floor_room_e20",
+                    "destination": "p002_first_floor_room_d14",
+                },
+            )
+
+        self.assertEqual(catalog.status_code, 200)
+        self.assertEqual(len(catalog.json()["nodes"]), 280)
+        self.assertEqual(catalog.json()["nodes"][0]["page"], 1)
+        self.assertEqual(route.status_code, 200)
+        self.assertEqual(route.json()["status"], "ok")
+        self.assertEqual(route.json()["floor_changes"], 1)
+
+    def test_closed_node_blocks_incident_edges_until_reopened(self):
+        graph = {
+            "nodes": [
+                {"id": "a", "name": "A", "kind": "room", "page": 1},
+                {"id": "b", "name": "B", "kind": "room", "page": 1},
+            ],
+            "edges": [{"from": "a", "to": "b", "blocked": False}],
+        }
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            map_path = root / "map.json"
+            transfer_path = root / "transfers.json"
+            status_path = root / "node_status.json"
+            map_path.write_text(json.dumps(graph), encoding="utf-8")
+            transfer_path.write_text('{"transfers":[]}', encoding="utf-8")
+            status_path.write_text('{"blocked_nodes":[]}', encoding="utf-8")
+
+            with (
+                patch.object(main, "MAP_PATH", map_path),
+                patch.object(main, "TRANSFER_PATH", transfer_path),
+                patch.object(main, "NODE_STATUS_PATH", status_path),
+            ):
+                blocked = self.client.put(
+                    "/admin/node-status",
+                    json={"node_id": "a", "out_of_order": True},
+                )
+                blocked_route = self.client.post(
+                    "/route",
+                    json={"start": "a", "destination": "b", "card_type": "staff"},
+                )
+                reopened = self.client.put(
+                    "/admin/node-status",
+                    json={"node_id": "a", "out_of_order": False},
+                )
+                open_route = self.client.post(
+                    "/route",
+                    json={"start": "a", "destination": "b", "card_type": "staff"},
+                )
+
+        self.assertEqual(blocked.status_code, 200)
+        self.assertEqual(blocked_route.json()["status"], "no_route")
+        self.assertEqual(reopened.status_code, 200)
+        self.assertEqual(open_route.json()["status"], "ok")
+
+    def test_closed_node_blocks_floor_transfer(self):
+        map_data = {
+            "nodes": [
+                {"id": "a", "name": "A", "kind": "lift", "page": 1},
+                {"id": "b", "name": "B", "kind": "lift", "page": 2},
+            ],
+            "edges": [],
+        }
+        transfers = [
+            {"from": "a", "to": "b", "kind": "lift", "group": "Lift"}
+        ]
+
+        main._apply_node_blocks(map_data, transfers, {"a"})
+
+        self.assertTrue(transfers[0]["blocked"])
 
 
 if __name__ == "__main__":

@@ -69,11 +69,13 @@ These transforms are calibrated per floor and should be visually checked wheneve
 
 The extractor creates same-floor edges only. `backend/data/floor_transfers.json` supplies explicit cross-floor links between stair/lift landings; these links are added only to routing and are not guessed from coordinates. Verify each connector pair against the building plans before deployment. Override the configuration file with `FLOOR_TRANSFERS_PATH`.
 
-Same-floor edges marked `blocked: true` are excluded. Ordinary routes allow edges with unknown accessibility, while step-free requests require each walking edge to have `wheelchair_accessible: true`. Cross-floor step-free links must be lifts explicitly marked accessible. Edges marked `requires_id_card: true` are excluded when the request indicates no card.
+Edges marked `blocked: true` are excluded. When step-free routing is requested, `wheelchair_accessible: false` excludes an edge; `true` and `null` are both treated as accessible. Cross-floor step-free links must be lifts and must not be explicitly marked inaccessible.
 
-The current extracted map has no confirmed wheelchair-accessibility values on its 275 walking edges. Therefore, step-free requests may return `no_route` until those edge attributes are verified and populated. Transfer accessibility also needs building-level confirmation. A self-selected card category is only reduced to a card/no-card boolean; it does not authenticate the user or prove real door access.
+An edge with `requires_id_card: null` is open to every card category, including visitors. If it is `true`, visitors are blocked; student cards are also blocked from 18:00 local time onward, while staff and postgraduate cards remain allowed. The frontend sends the selected card category and its current local time. This self-selected value does not authenticate the user or prove real door access.
 
-Live closures, incidents, timed access, “avoid reported problems,” amenities, and arbitrary map points are not connected to backend routing yet. Routes can start or end only at mapped rooms and stairs/lifts. The interface calls out these current limits rather than suggesting that local demo markers affect the backend route.
+When an admin marks a mapped room or connector out of order, the frontend sends its graph node ID to `PUT /admin/node-status`. The backend persists closed node IDs in `backend/data/node_status.json` and treats every connected graph edge and configured floor transfer as `blocked: true` while that node is closed. Resolving the last active closure reopens its routes without overwriting the source graph. This prototype endpoint has no authentication; deploy it only behind trusted access until admin authentication is implemented.
+
+Live incidents, timed access markers, “avoid reported problems,” amenities, and arbitrary map points are not connected to backend routing yet. Routes can start or end only at mapped rooms and stairs/lifts.
 
 ## API contract
 
@@ -86,8 +88,9 @@ Live closures, incidents, timed access, “avoid reported problems,” amenities
   "start": "p001_ground_floor_room_e20",
   "destination": "p002_first_floor_room_d14",
   "wheelchair_required": false,
-  "has_id_card": false
+  "card_type": "student",
+  "local_time": "17:30"
 }
 ```
 
-A successful response has `status: "ok"`, ordered `node_ids`, `edge_ids`, `points`, `segments`, `steps`, and `floor_changes`. Unreachable filtered paths return `status: "no_route"`; unknown node IDs return HTTP 404. Invalid map or transfer data is reported as an API error rather than silently producing a route.
+A successful response has `status: "ok"`, ordered `node_ids`, `edge_ids`, `points`, `segments`, `steps`, and `floor_changes`. Unreachable filtered paths return `status: "no_route"`; unknown node IDs return HTTP 404. `PUT /admin/node-status` accepts `{"node_id": "GRAPH_NODE_ID", "out_of_order": true}` to block a mapped node and its connected edges, or `false` to reopen it. Invalid map, transfer, or node-status data is reported as an API error rather than silently producing a route.

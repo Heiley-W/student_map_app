@@ -338,7 +338,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
         <div><label class="lbl" for="sel-card">Your card</label><select id="sel-card"></select></div>
         <label class="row"><input type="checkbox" class="switch" id="tg-step"> Step-free route (lifts only)</label>
         <button class="btn primary wide" id="btn-route" type="button">Find route</button>
-        <p class="hint">Routing uses the extracted map graph. Live closures, timed access and reported problems are not applied yet; step-free routing requires edges marked accessible.</p>
+        <p class="hint">Closed mapped rooms and connectors are removed from routes. On card-required edges, visitors are blocked and students are blocked after 6 PM. Step-free routing treats accessibility as available unless an edge is marked inaccessible.</p>
       </div>
     </div>
 
@@ -718,12 +718,23 @@ const api = {
         start,
         destination,
         wheelchair_required:req.stepFree,
-        has_id_card:req.access!=='visitor',
+        card_type:req.access,
+        local_time:new Date().toTimeString().slice(0,5),
       }),
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.detail || `Route request failed (${response.status}).`);
     return adaptRoute(result, config);
+  },
+  async setNodeOutOfOrder(nodeId, outOfOrder){
+    const response = await fetch(`${ROUTE_API_BASE}/admin/node-status`, {
+      method:'PUT',
+      headers:{ 'Content-Type':'application/json' },
+      body:JSON.stringify({ node_id:nodeId, out_of_order:outOfOrder }),
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.detail || `Node status update failed (${response.status}).`);
+    return result;
   },
   async addRoom(room){ data.rooms.push(room); saveData(); return room; },
   async updateEntity(kind, id, patch){ const e = getEntity(kind,id); Object.assign(e, patch); saveData(); return e; },
@@ -758,6 +769,16 @@ const api = {
     saveData();
   },
 };
+
+async function syncBackendNodeStatus(kind, id, outOfOrder){
+  const entity = getEntity(kind, id);
+  if (!entity) return false;
+  const config = await loadRouteConfig();
+  const nodeId = routeNodeFor(placeRef(kind, entity), config);
+  if (!nodeId) return false;
+  await api.setNodeOutOfOrder(nodeId, outOfOrder);
+  return true;
+}
 
 function collectionOf(kind){ return {room:'rooms', amenity:'amenities', transition:'transitions', marker:'markers', walkway:'walkways'}[kind]; }
 function getEntity(kind, id){ const k = collectionOf(kind); return k ? data[k].find(e => e.id === id) : null; }
@@ -1325,7 +1346,7 @@ function renderResults(){
   }
   if (r.status==='no_route'){
     const card = CARDS.find(c=>c.id===ui.card)?.label;
-    el.innerHTML = staleNote + `<div class="notice"><p><strong>No route with these settings.</strong> ${ui.stepFree?'The graph has no confirmed accessible walking path for this request. ':''}Your card: ${esc(card)}.</p>
+    el.innerHTML = staleNote + `<div class="notice"><p><strong>No route with these settings.</strong> ${ui.stepFree?'An edge may be marked inaccessible, or no path meets the selected filters. ':''}Your card: ${esc(card)}.</p>
       <div class="acts">${ui.stepFree?'<button class="btn small" type="button" data-toggle-step>Try without step-free filtering</button>':''}</div></div>`;
     return;
   }
@@ -1591,9 +1612,15 @@ async function markerAt(p, hit){
   if (target){ m.targetKind = target.kind; m.targetId = target.id; } else { m.floor = ui.floor; m.x = Math.round(p.x); m.y = Math.round(p.y); m.radius = Math.max(5, +v.radius || 40); }
   if (v.kind==='event'){ m.start = v.start; m.end = v.end; }
   if (v.kind==='access'){ m.allowed = v.allowed; m.windowCards = v.windowCards; m.windowFrom = v.windowFrom; m.windowTo = v.windowTo; }
+  const routeStatusUpdated = v.kind==='closure' && target
+    ? await syncBackendNodeStatus(target.kind, target.id, true)
+    : false;
   await api.addMarker(m); ui.selected = {kind:'marker', id:m.id};
   if (ui.route) await refreshRoute();
-  render(); toast('Marker added locally. Backend routes do not use live markers yet.');
+  render();
+  toast(routeStatusUpdated
+    ? 'Closed node removed from backend routes.'
+    : 'Marker added locally; this place has no backend route-node mapping.');
 }
 async function transitionAt(p){
   if (!inPlan(p)) return;
@@ -1755,12 +1782,18 @@ document.addEventListener('click', async ev => {
   }
   if ('redtag' in ds){
     const s = ui.selected; const e = getEntity(s.kind,s.id);
-    const v = await form({ title:'Mark out of order', desc:`This local demo flag will not affect backend routes yet.`, submit:'Mark out of order', fields:[
+    const v = await form({ title:'Mark out of order', desc:`When this place has a route-node mapping, its connected routes will be blocked.`, submit:'Mark out of order', fields:[
       {name:'title', label:'What’s wrong?', type:'text', required:true, value: s.kind==='amenity' ? `${AMENITY_TYPES[e.type].label} out of order` : 'Closed'},
       {name:'detail', label:'Details', type:'textarea'} ]});
     if (!v) return;
+    const routeStatusUpdated = await syncBackendNodeStatus(s.kind, s.id, true);
     await api.addMarker({ id:uid('m'), kind:'closure', status:'active', targetKind:s.kind, targetId:s.id, title:v.title.trim(), detail:v.detail.trim(), by:'admin', at:new Date().toISOString() });
-    if (ui.route) await refreshRoute(); render(); toast('Marked locally; backend routes do not use closures yet.'); return;
+    if (ui.route) await refreshRoute();
+    render();
+    toast(routeStatusUpdated
+      ? 'Marked out of order; connected graph edges are blocked.'
+      : 'Marked locally; this place has no backend route-node mapping.');
+    return;
   }
   if ('rename' in ds){
     const s = ui.selected; const e = getEntity(s.kind,s.id);
@@ -1771,13 +1804,43 @@ document.addEventListener('click', async ev => {
     const s = ui.selected; const e = getEntity(s.kind,s.id);
     const v = await form({ title:`Delete ${entityLabel(s.kind,e)}?`, desc:'Markers attached to it are deleted too.', submit:'Delete', danger:true, fields:[] });
     if (!v) return;
+    const hasActiveClosure = data.markers.some(marker =>
+      marker.kind==='closure' && marker.status==='active' &&
+      marker.targetKind===s.kind && marker.targetId===s.id
+    );
+    if (hasActiveClosure) await syncBackendNodeStatus(s.kind, s.id, false);
     for (const end of ['from','to']) if (ui[end] && ui[end].kind===s.kind && ui[end].id===s.id) { ui[end]=null; $('#in-'+end).value=''; ui.route=null; }
     await api.deleteEntity(s.kind, s.id); ui.selected = null; if (ui.route) await refreshRoute(); render(); toast('Deleted.'); return;
   }
   if ('addtag' in ds){ const inp = $('#add-tag'); const tags = splitTags(inp.value); if (!tags.length) return; const s = ui.selected; const e = getEntity(s.kind,s.id); await api.updateEntity(s.kind, s.id, { tags:[...new Set([...(e.tags||[]), ...tags])] }); render(); return; }
   if (ds.untag){ const s = ui.selected; const e = getEntity(s.kind,s.id); await api.updateEntity(s.kind, s.id, { tags:e.tags.filter(t=>t!==ds.untag) }); render(); return; }
   if (ds.unnote){ const s = ui.selected; const e = getEntity(s.kind,s.id); await api.updateEntity(s.kind, s.id, { notes:e.notes.filter((_,i)=>i!==+ds.unnote) }); render(); return; }
-  if (ds.resolve){ await api.resolveMarker(ds.resolve); if (ui.selected?.id===ds.resolve) ui.selected=null; render(); toast('Removed locally. Backend routes do not use live markers yet.'); return; }
+  if (ds.resolve){
+    const marker = data.markers.find(x=>x.id===ds.resolve);
+    let routeStatusUpdated = false;
+    let anotherClosure = false;
+    if (marker?.kind==='closure' && marker.targetKind){
+      anotherClosure = data.markers.some(other =>
+        other.id!==marker.id && other.kind==='closure' && other.status==='active' &&
+        other.targetKind===marker.targetKind && other.targetId===marker.targetId
+      );
+      if (!anotherClosure) {
+        routeStatusUpdated = await syncBackendNodeStatus(marker.targetKind, marker.targetId, false);
+      }
+    }
+    await api.resolveMarker(ds.resolve);
+    if (ui.selected?.id===ds.resolve) ui.selected=null;
+    if (marker?.kind==='closure' && ui.route) await refreshRoute();
+    render();
+    toast(marker?.kind!=='closure'
+      ? 'Marker removed.'
+      : anotherClosure
+        ? 'This marker was removed; another active closure still blocks this node.'
+        : routeStatusUpdated
+          ? 'Out-of-order status cleared; routes have been reopened.'
+          : 'Marker removed locally; this place has no backend route-node mapping.');
+    return;
+  }
   if (ds.approve){ await api.reviewSuggestion(ds.approve, true); render(); toast('Approved. It now shows on the map.'); return; }
   if (ds.reject){ await api.reviewSuggestion(ds.reject, false); render(); toast('Suggestion rejected.'); return; }
   if (ds.showMarker){ const m = data.markers.find(x=>x.id===ds.showMarker); if (m) goToEntity('marker', m); return; }
