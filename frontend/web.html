@@ -1850,7 +1850,19 @@ document.addEventListener('click', async ev => {
   if (ds.go){ const [k,id] = ds.go.split(':'); const e = getEntity(k,id); const end = ui.showAll?.end || 'to'; ui.showAll = null; setEndpoint(end, placeRef(k,e)); if (end==='from'){ if (!ui.to){ toast('Now choose where you are going.'); $('#in-to').focus(); } return; } if (!ui.from){ toast('Now choose where you are starting from.'); $('#in-from').focus(); } return; }
   if (ds.focus && !ev.target.closest('button')){ const [k,id] = ds.focus.split(':'); goToEntity(k, getEntity(k,id)); return; }
   if ('clearAll' in ds){ ui.showAll = null; render(); return; }
-  if ('clearRoute' in ds){ ui.route = null; ui.avoidIds=[]; ui.keptIds=[]; render(); return; }
+  if ('clearRoute' in ds){
+    ui.route = null;
+    ui.routeReq = null;
+    ui.from = null;
+    ui.to = null;
+    $('#in-from').value = '';
+    $('#in-to').value = '';
+    ui.avoidIds = [];
+    ui.keptIds = [];
+    ui.stale = false;
+    render();
+    return;
+  }
   if ('reroute' in ds){ findRoute(); return; }
   if ('toggleStep' in ds){ ui.stepFree=false; $('#tg-step').checked=false; findRoute(); return; }
   if ('export' in ds){ await form({ title:'Map data (JSON)', desc:'Copy this and share it with the backend team. It uses the same shapes the app expects back.', submit:'Close', fields:[{name:'json', label:'JSON', type:'textarea', value:JSON.stringify(data,null,2), rows:14, copy:true}] }); return; }
