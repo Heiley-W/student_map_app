@@ -43,15 +43,15 @@ print("Running script:", Path(__file__).resolve())
 print("Using routing module:", __import__("routing").__file__)
 print("Reading map:", map_path)
 
-all_map_data = json.loads(map_path.read_text(encoding="utf-8"))
-ground_floor = all_map_data["pages"]["1"]
+map_data = json.loads(map_path.read_text(encoding="utf-8"))
+#ground_floor = all_map_data["pages"]["1"]
 
-print("First map node:", ground_floor["nodes"][0])
+#print("First map node:", ground_floor["nodes"][0])
 
-map_data = {
-    "nodes": ground_floor["nodes"],
-    "edges": ground_floor["edges"]
-}
+#map_data = {
+    #"nodes": ground_floor["nodes"],
+    #"edges": ground_floor["edges"]
+#}
 # Replace these with IDs from your updated JSON.
 start = "p001_ground_floor_corridor_1"
 destination = "p001_ground_floor_corridor_2"
