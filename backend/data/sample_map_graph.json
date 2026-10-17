@@ -1,0 +1,17 @@
+{
+  "nodes": [
+    {"id": "great_hall", "name": "Great Hall", "x": 10, "y": 50},
+    {"id": "stairs", "name": "Main Staircase", "x": 45, "y": 20},
+    {"id": "corridor", "name": "Accessible Corridor", "x": 45, "y": 80},
+    {"id": "card_door", "name": "Card-Controlled Door", "x": 55, "y": 50},
+    {"id": "library", "name": "Library", "x": 90, "y": 50}
+  ],
+  "edges": [
+    {"id": "hall_stairs", "from": "great_hall", "to": "stairs", "time_seconds": 20, "wheelchair_accessible": false, "requires_id_card": false, "blocked": false},
+    {"id": "stairs_library", "from": "stairs", "to": "library", "time_seconds": 20, "wheelchair_accessible": false, "requires_id_card": false, "blocked": false},
+    {"id": "hall_corridor", "from": "great_hall", "to": "corridor", "time_seconds": 70, "wheelchair_accessible": true, "requires_id_card": false, "blocked": false},
+    {"id": "corridor_library", "from": "corridor", "to": "library", "time_seconds": 70, "wheelchair_accessible": true, "requires_id_card": false, "blocked": false},
+    {"id": "hall_card", "from": "great_hall", "to": "card_door", "time_seconds": 15, "wheelchair_accessible": true, "requires_id_card": true, "blocked": false},
+    {"id": "card_library", "from": "card_door", "to": "library", "time_seconds": 15, "wheelchair_accessible": true, "requires_id_card": true, "blocked": false}
+  ]
+}
