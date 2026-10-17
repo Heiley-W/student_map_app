@@ -1,51 +1,37 @@
 
 #!/usr/bin/env python3
-
 """
-Extract a multi-floor navigation graph from a PDF using Gemini.
+Extract a navigable, multi-floor graph from a floor-plan PDF using Gemini.
 
-Features:
-- Detects the floor name from the top-left of each PDF page.
-- Identifies rooms, doors, corridors, junctions, turns, stairs and lifts.
-- Extracts arrow annotations and their target locations.
-- Retries temporary Gemini API failures (429, 500, 502, 503, 504).
-- Saves a checkpoint after each successfully processed page.
-- Resumes from saved pages on subsequent runs.
-- Generates annotated preview images for every page.
+Features
+--------
+- Detects labelled and unlabelled rooms.
+- Specifically looks for dark-grey, unlabelled lift symbols.
+- Extracts room doorways, corridors, junctions, stairs and lifts.
+- Validates room/lift connectivity and edge endpoints.
+- Generates a graph preview for every page.
+- Saves a checkpoint after each page and supports resuming.
+- Produces JSON suitable for a React navigation app.
 
-Install:
-    pip install google-genai pymupdf pydantic pillow matplotlib
-
-Set API key:
-    export GEMINI_API_KEY="YOUR_API_KEY"
-
-Run:
-    python pdf_to_json_map.py "hogwarts_map.pdf"
-
-Options:
-    --output map_graph.json
-    --model gemini-3.8-flash
-    --dpi 180
-    --no-resume
+Usage
+-----
+python pdf_to_json_map.py "hogwarts_map.pdf"
+python pdf_to_json_map.py "hogwarts_map.pdf" --no-resume
+python pdf_to_json_map.py "hogwarts_map.pdf" --output map_graph.json
 """
 
 import argparse
 import json
 import os
-import random
 import re
 import sys
 import time
 from pathlib import Path
-from typing import Literal
+from typing import Literal, Optional
 
-import fitz
-import matplotlib
-
-matplotlib.use("Agg")
-
+import fitz  # PyMuPDF
 import matplotlib.pyplot as plt
-from matplotlib.patches import Circle
+import matplotlib.patches as patches
 from PIL import Image
 from pydantic import BaseModel, Field
 from google import genai
@@ -53,12 +39,17 @@ from google.genai import types
 
 
 # ============================================================
-# 1. Structured output schemas
+# Configuration
 # ============================================================
 
-NodeKind = Literal[
+DEFAULT_MODEL = "gemini-3.8-flash"
+MAX_ATTEMPTS = 6
+INITIAL_RETRY_DELAY = 3
+
+NODE_KINDS = Literal[
     "room",
     "door",
+    "corridor",
     "junction",
     "turning_point",
     "stairs",
@@ -68,561 +59,646 @@ NodeKind = Literal[
 ]
 
 
+# ============================================================
+# Structured output schema
+# ============================================================
+
 class Node(BaseModel):
-    id: str
-    name: str
-    kind: NodeKind
-
-    # Percentages relative to the individual PDF page.
-    x: float = Field(ge=0, le=100)
-    y: float = Field(ge=0, le=100)
-
-    floor: str
-    confidence: float = Field(ge=0, le=1)
+    id: str = Field(description="Unique node ID within this page")
+    name: str = Field(
+        description="Room name, corridor label, or descriptive name"
+    )
+    kind: NODE_KINDS
+    x: float = Field(
+        description="Horizontal coordinate as percentage, 0 to 100"
+    )
+    y: float = Field(
+        description="Vertical coordinate as percentage, 0 to 100"
+    )
+    floor: str = ""
+    confidence: float = Field(default=0.8, ge=0, le=1)
     notes: str = ""
 
 
 class Edge(BaseModel):
-    id: str
-    source: str
-    target: str
-
-    time_seconds: float | None = None
-    wheelchair_accessible: bool | None = None
-    requires_id_card: bool | None = None
-    blocked: bool | None = None
-
-    confidence: float = Field(ge=0, le=1)
+    source: str = Field(description="ID of the starting node")
+    target: str = Field(description="ID of the destination node")
+    time_seconds: Optional[float] = None
+    wheelchair_accessible: Optional[bool] = None
+    requires_id_card: Optional[bool] = None
+    blocked: bool = False
+    confidence: float = Field(default=0.8, ge=0, le=1)
     notes: str = ""
 
 
 class ArrowNote(BaseModel):
-    id: str
     text: str
-
-    # Arrow target position, as page percentages.
-    x: float = Field(ge=0, le=100)
-    y: float = Field(ge=0, le=100)
-
-    # Text label position, when identifiable.
-    label_x: float | None = Field(default=None, ge=0, le=100)
-    label_y: float | None = Field(default=None, ge=0, le=100)
-
-    direction: str = "unknown"
-    target_node_id: str | None = None
-    floor: str
-    confidence: float = Field(ge=0, le=1)
+    x: float = Field(description="Arrow target x, percentage 0 to 100")
+    y: float = Field(description="Arrow target y, percentage 0 to 100")
+    label_x: Optional[float] = None
+    label_y: Optional[float] = None
+    direction: Optional[str] = None
+    target_node_id: Optional[str] = None
+    floor: str = ""
+    confidence: float = Field(default=0.8, ge=0, le=1)
 
 
 class GraphExtraction(BaseModel):
     floor: str
     nodes: list[Node]
     edges: list[Edge]
-    arrow_notes: list[ArrowNote] = Field(default_factory=list)
+    arrow_notes: list[ArrowNote] = []
 
 
 # ============================================================
-# 2. Gemini prompt
+# Extraction prompt
 # ============================================================
 
-PROMPT = """
-Extract a complete indoor navigation graph from this floor-plan image.
+PROMPT = r"""
+You are extracting a real, walkable indoor navigation graph from a
+floor-plan image. Accuracy of geometry and connectivity is essential.
 
-This image represents ONE FLOOR of a multi-floor building.
+The page is one floor of a multi-floor building. The floor name is
+usually printed near the top-left of the page.
 
-FLOOR NAME
-- Read the floor name printed in the TOP-LEFT corner.
-- Preserve the wording as printed.
-- Return the name in the top-level floor field and every node and arrow note.
-- If unreadable, use "Unknown floor".
-- Do not infer the floor name from other pages.
+Return structured data using the supplied schema.
 
 COORDINATES
-- x and y must be percentages from 0 to 100.
-- (0, 0) is the top-left corner.
-- (100, 100) is the bottom-right corner.
-- Node coordinates indicate the actual feature location.
-- Arrow-note coordinates indicate the point the arrow points to.
-- label_x and label_y indicate the annotation text location when identifiable.
+- Every node coordinate must be a percentage of the page image:
+  x = 0 at the left and 100 at the right.
+  y = 0 at the top and 100 at the bottom.
+- Place nodes at meaningful physical locations, not arbitrary points.
+- Place room nodes near the centre of each room.
+- Place door nodes at the actual door opening.
+- Place lift nodes at the centre of the lift symbol.
+- Place corridor and junction nodes on the walkable corridor space.
 
-NODES
-Identify:
-- Rooms and named destinations.
-- Doors and corridor openings.
-- Corridor junctions.
-- Every significant corridor bend and turning point.
-- Entrances and exits.
-- Staircases, stairwells and stair access points.
-- Lifts, elevators, lift shafts and lift access points.
-- Other significant navigation landmarks.
+1. DETECT EVERY ROOM
+- Identify every enclosed room, including rooms with no text,
+  room number, label, furniture, or other contents.
+- Use wall boundaries, room outlines, and door openings, not text alone.
+- A blank enclosed space is still a room.
+- Give labelled rooms their printed names.
+- Name unlabelled rooms uniquely, for example:
+  "Unlabelled Room 1", "Unlabelled Room 2".
+- Number unlabelled rooms separately on each floor.
+- Include small rooms, storage rooms, toilets, offices and utility rooms
+  where their outlines are visible.
+- Do not classify corridors, open halls, stairs or lifts as rooms.
+- Do not create duplicate nodes for the same physical room.
+- If a boundary is ambiguous, record the uncertainty in notes.
 
-STAIRS
-- Use kind="stairs".
-- Identify stair symbols and visible labels such as "Stairs",
-  "Staircase", "Fire Escape" and similar wording.
-- Place nodes at actual stair access locations.
-- If a separate stair lobby or entrance is shown, create a separate node
-  if needed for routing.
-- Connect stairs to corridors only where a walkable connection is visible.
-- Do not invent stair connections between floors.
+2. ROOM DOORS AND CORRIDOR CONNECTIONS
+For EACH room:
+- Find its actual entrance or doorway in the wall boundary.
+- Create a distinct "door" node at that opening unless a suitable
+  doorway node already exists.
+- Add an edge between the room node and its doorway node.
+- Add an edge between that doorway and the corridor or junction
+  immediately outside the door.
+- Ensure the doorway is connected to the wider corridor network.
+- If a door opens into a small connecting passage, represent that
+  passage with a corridor or junction node when necessary.
+- A room must not be considered connected merely because its node
+  is close to a corridor node in Euclidean distance.
+- Never connect across a solid wall or through another room.
+- Do not connect a room to a corridor that is not reachable through
+  its actual opening.
+- If you cannot determine the entrance confidently, still create the
+  room node and explain the uncertain connection in its notes.
+- Do not omit edges simply because a room has no printed name.
 
-LIFTS
-- Use kind="lift".
-- Identify lift symbols, elevator symbols, shafts and visible labels.
-- Preserve labels such as "Lift", "Elevator" or lift numbers.
-- Place nodes at actual lift access locations.
-- If a separate lift lobby or entrance is shown, create a separate node
-  if needed for routing.
-- Connect lifts to corridors only where a walkable connection is visible.
-- Do not invent cross-floor connections.
+3. IMPORTANT LIFT DETECTION
+- There is a lift represented by a dark-grey filled square or rectangle
+  that may have NO text, letter, icon or label.
+- Actively inspect dark-grey enclosed boxes and their surrounding walls.
+- Do not require the word "LIFT" to appear.
+- Classify the known dark-grey lift box as kind "lift".
+- Give it the name "Lift" or "Lift (unlabelled)".
+- Place its node at the centre of the box.
+- Connect the lift to the corridor/junction at its real entrance.
+- Do not mistake the lift for an ordinary room, wall, or solid obstruction.
+- If there are multiple lifts, represent each separately.
+- Do not infer an entrance through a solid wall.
 
-WALKABLE EDGES
-- Each edge represents a directly walkable connection on THIS floor.
-- Follow visible corridors, doorways and openings.
-- Every significant corridor bend must be a node.
-- Connect consecutive nodes along corridors.
-- Do not connect nodes through walls.
-- Do not connect rooms without evidence of a doorway or opening.
-- Do not treat annotation arrows as walkable paths.
-- Do not create edges to another floor.
-- Do not assume nearby nodes are connected just because they are close.
-- If traversal time is unknown, use null.
-- Use null for unknown wheelchair accessibility, access-card requirements
-  and blocked status.
+4. CORRIDORS AND JUNCTIONS
+- Represent the walkable corridor network with corridor and junction
+  nodes, including bends, intersections and dead ends.
+- Add edges along physically continuous walkable passages.
+- Split a corridor at meaningful intersections, doors, stairs and lifts
+  where this helps route finding.
+- Connect doorways to the correct corridor segment.
+- Do not connect corridors across walls or closed, impassable spaces.
+- Avoid excessive redundant nodes in a straight corridor.
 
-ARROW ANNOTATIONS
-- Read all visible notes and labels associated with arrows.
-- Preserve the text as accurately as possible.
-- Record each annotation in arrow_notes.
-- Include arrow target coordinates and text position when identifiable.
-- Describe arrow direction when identifiable.
-- If an arrow points to a room, lift, staircase, door or corridor,
-  associate it with that node if the target is clear.
-- Also add relevant annotation information to the node's notes.
-- Do not create navigation edges from annotation arrows.
-- If a target is unclear, state that in the notes.
+5. STAIRS AND FLOOR CHANGES
+- Detect staircases and label them "stairs".
+- Detect lifts even when their symbols are unlabelled.
+- Connect stairs and lifts to the corridor network on this floor.
+- Do NOT create cross-floor edges in this extraction.
+- Cross-floor links will be matched separately by the application.
 
-OUTPUT RULES
-- Return floor, nodes, edges and arrow_notes.
-- Do not invent locations, labels, floor names or connections.
-- Use unique node and edge IDs within this page.
-- Use snake_case IDs.
-- Include all significant corridor turns.
-- Return coordinates relative to this page, not the whole PDF.
+6. ARROWS AND ANNOTATIONS
+- Record meaningful arrows, directional annotations and route notes.
+- Preserve the text as written.
+- Record the arrow target coordinates and, where possible, its target node.
+- Do not interpret decorative arrows as passages.
+
+7. EDGE RULES
+- Every edge endpoint must reference an ID of an existing node.
+- Every edge must represent a physically plausible walking connection.
+- Edges are undirected unless the floor plan explicitly indicates
+  one-way movement.
+- Do not invent distances, accessibility or restrictions that are not
+  shown. Leave unknown optional properties null.
+- Do not create edges between nodes on different floors.
+- Use unique node IDs within this page.
+- Avoid duplicate edges.
+
+8. FINAL SELF-CHECK
+Before returning the graph, inspect every room individually:
+- Is the room node present?
+- Is its doorway represented?
+- Is the room connected to that doorway?
+- Is the doorway connected to the corridor immediately outside?
+- Can the room reach the wider corridor network?
+Also check the dark-grey unlabelled lift:
+- Is there a lift node at its centre?
+- Is it connected to the corridor at its actual entrance?
+
+Do not falsely claim a connection when the floor plan does not establish it.
+Use notes and confidence scores to communicate uncertainty.
 """
 
 
 # ============================================================
-# 3. Helpers
+# Gemini client and retry logic
 # ============================================================
 
-def safe_id(value: str) -> str:
-    """Convert text into a simple snake_case identifier."""
-    value = value.strip().lower()
-    value = re.sub(r"[^a-z0-9]+", "_", value)
-    return value.strip("_") or "unnamed"
+def make_client():
+    """Create the Gemini client using the configured API key."""
+    if not os.environ.get("GEMINI_API_KEY"):
+        raise RuntimeError(
+            "GEMINI_API_KEY is not set.\n"
+            "Set it in your terminal before running this script."
+        )
+
+    return genai.Client(api_key=os.environ["GEMINI_API_KEY"])
 
 
-def unique_id(base: str, used: set[str]) -> str:
-    """Generate a unique identifier."""
-    candidate = base
-    suffix = 2
-
-    while candidate in used:
-        candidate = f"{base}_{suffix}"
-        suffix += 1
-
-    used.add(candidate)
-    return candidate
-
-
-def normalise_floor_name(name: str | None) -> str:
-    if not name or not name.strip():
-        return "Unknown floor"
-    return name.strip()
-
-
-def render_pdf_page(page: fitz.Page, dpi: int) -> Image.Image:
-    """Render a PDF page as a PIL image."""
-    scale = dpi / 72
-    pix = page.get_pixmap(
-        matrix=fitz.Matrix(scale, scale),
-        alpha=False,
+def generate_with_retry(client, model, prompt, image):
+    """Retry transient Gemini API failures with exponential backoff."""
+    transient_markers = (
+        "429",
+        "500",
+        "502",
+        "503",
+        "504",
+        "RESOURCE_EXHAUSTED",
+        "UNAVAILABLE",
+        "INTERNAL",
+        "DEADLINE_EXCEEDED",
     )
 
-    return Image.frombytes(
-        "RGB",
-        [pix.width, pix.height],
-        pix.samples,
-    )
-
-
-def save_json(path: Path, data: dict) -> None:
-    """Write JSON safely via a temporary file."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-
-    temp_path = path.with_suffix(path.suffix + ".tmp")
-    temp_path.write_text(
-        json.dumps(data, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    temp_path.replace(path)
-
-
-# ============================================================
-# 4. Retry temporary Gemini API errors
-# ============================================================
-
-def get_status_code(exc: Exception) -> int | None:
-    """Extract an HTTP status code from a Google SDK exception."""
-    code = getattr(exc, "code", None)
-
-    if code is None:
-        code = getattr(exc, "status_code", None)
-
-    try:
-        if code is not None:
-            return int(code)
-    except (TypeError, ValueError):
-        pass
-
-    match = re.search(
-        r"\b(429|500|502|503|504)\b",
-        str(exc),
-    )
-
-    return int(match.group(1)) if match else None
-
-
-def generate_content_with_retry(
-    client,
-    *,
-    model: str,
-    contents,
-    config,
-    max_attempts: int = 6,
-):
-    """
-    Retry temporary service errors with exponential backoff.
-
-    Other errors are raised immediately.
-    """
-
-    retryable_codes = {429, 500, 502, 503, 504}
-
-    for attempt in range(max_attempts):
+    for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
             return client.models.generate_content(
                 model=model,
-                contents=contents,
-                config=config,
+                contents=[prompt, image],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    response_schema=GraphExtraction,
+                    temperature=0.1,
+                ),
             )
 
         except Exception as exc:
-            status_code = get_status_code(exc)
-
-            if status_code not in retryable_codes:
-                raise
-
-            if attempt == max_attempts - 1:
-                raise
-
-            delay = min(2 ** (attempt + 1), 60)
-            delay += random.uniform(0, 1)
-
-            print(
-                f"  Gemini HTTP {status_code}: {exc}",
-                file=sys.stderr,
-            )
-            print(
-                f"  Retrying in {delay:.1f}s "
-                f"(attempt {attempt + 2}/{max_attempts})...",
-                flush=True,
+            message = str(exc)
+            is_transient = any(
+                marker.lower() in message.lower()
+                for marker in transient_markers
             )
 
+            if not is_transient or attempt == MAX_ATTEMPTS:
+                raise
+
+            delay = INITIAL_RETRY_DELAY * (2 ** (attempt - 1))
+            print(
+                f"  Gemini request failed "
+                f"({attempt}/{MAX_ATTEMPTS}): {message[:200]}"
+            )
+            print(f"  Retrying in {delay}s...")
             time.sleep(delay)
 
 
 # ============================================================
-# 5. Extract one page
+# PDF rendering
 # ============================================================
 
-def extract_page(
-    client,
-    model: str,
-    page_image: Image.Image,
-    page_number: int,
-) -> dict:
-
-    response = generate_content_with_retry(
-        client,
-        model=model,
-        contents=[PROMPT, page_image],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            response_schema=GraphExtraction,
-            temperature=0,
-        ),
+def render_page(page, dpi):
+    """Render a PyMuPDF page as an RGB PIL image."""
+    scale = dpi / 72
+    pixmap = page.get_pixmap(
+        matrix=fitz.Matrix(scale, scale),
+        alpha=False,
     )
 
-    extraction = response.parsed
+    image = Image.frombytes(
+        "RGB",
+        (pixmap.width, pixmap.height),
+        pixmap.samples,
+    )
 
-    if extraction is None:
-        raise RuntimeError(
-            f"Gemini returned no valid structured result for page "
-            f"{page_number}. Response: {response.text}"
-        )
+    return image
 
-    floor_name = normalise_floor_name(extraction.floor)
-    prefix = f"p{page_number:03d}_{safe_id(floor_name)}"
 
-    # ----- Nodes -----
+# ============================================================
+# Helpers
+# ============================================================
 
-    id_map: dict[str, str] = {}
-    used_node_ids: set[str] = set()
-    nodes: list[dict] = []
+def slugify(text):
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", text.strip().lower())
+    return slug.strip("_") or "floor"
 
-    for node in extraction.nodes:
-        new_id = unique_id(
-            f"{prefix}_{safe_id(node.id)}",
-            used_node_ids,
-        )
 
-        id_map[node.id] = new_id
+def clamp_percentage(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
-        item = node.model_dump()
-        item["id"] = new_id
-        item["floor"] = floor_name
-        item["page"] = page_number
+    return max(0.0, min(100.0, value))
 
-        nodes.append(item)
 
-    # ----- Edges -----
+def normalise_floor_name(name, page_number):
+    name = str(name or "").strip()
+    if not name:
+        return f"Page {page_number}"
+    return name
 
-    used_edge_ids: set[str] = set()
-    edges: list[dict] = []
 
-    for edge in extraction.edges:
-        source_id = id_map.get(edge.source)
-        target_id = id_map.get(edge.target)
+def edge_key(source, target):
+    """Undirected edge key for duplicate detection."""
+    return tuple(sorted((source, target)))
 
-        if source_id is None or target_id is None:
-            print(
-                f"Warning: skipped edge {edge.id!r} on page "
-                f"{page_number}: missing endpoint.",
-                file=sys.stderr,
+
+# ============================================================
+# Graph validation
+# ============================================================
+
+def validate_graph(nodes, edges):
+    """
+    Find invalid edges, duplicate edges, isolated rooms/lifts, and rooms
+    or lifts that cannot reach a corridor-network node.
+
+    Returns a list of human-readable warnings.
+    Does not fabricate connections through walls.
+    """
+    warnings = []
+    node_by_id = {node["id"]: node for node in nodes}
+    adjacency = {node_id: set() for node_id in node_by_id}
+    seen_edges = set()
+
+    for edge in edges:
+        source = edge.get("from", edge.get("source"))
+        target = edge.get("to", edge.get("target"))
+
+        if source not in node_by_id:
+            warnings.append(
+                f"Edge references missing source node: {source}"
             )
             continue
 
-        if source_id == target_id:
+        if target not in node_by_id:
+            warnings.append(
+                f"Edge references missing target node: {target}"
+            )
             continue
 
-        item = edge.model_dump()
-        item["id"] = unique_id(
-            f"{prefix}_{safe_id(edge.id)}",
-            used_edge_ids,
-        )
+        if source == target:
+            warnings.append(f"Self-loop edge on node {source}")
+            continue
 
-        # These names match the React graph format.
-        item["from"] = source_id
-        item["to"] = target_id
+        key = edge_key(source, target)
+        if key in seen_edges:
+            warnings.append(f"Duplicate edge: {source} <-> {target}")
+            continue
 
-        item.pop("source", None)
-        item.pop("target", None)
+        seen_edges.add(key)
+        adjacency[source].add(target)
+        adjacency[target].add(source)
 
+    # Corridor-network targets for reachability.
+    corridor_kinds = {"corridor", "junction", "turning_point"}
+    corridor_ids = {
+        node_id
+        for node_id, node in node_by_id.items()
+        if node.get("kind") in corridor_kinds
+    }
+
+    # Find all nodes reachable from any corridor/junction.
+    reachable_from_corridor = set(corridor_ids)
+    stack = list(corridor_ids)
+
+    while stack:
+        current = stack.pop()
+        for neighbour in adjacency.get(current, ()):
+            if neighbour not in reachable_from_corridor:
+                reachable_from_corridor.add(neighbour)
+                stack.append(neighbour)
+
+    # Check every room and lift.
+    for node_id, node in node_by_id.items():
+        kind = node.get("kind")
+        name = node.get("name", node_id)
+
+        if kind not in {"room", "lift"}:
+            continue
+
+        if not adjacency[node_id]:
+            warnings.append(
+                f"{kind.upper()} '{name}' ({node_id}) has NO edges."
+            )
+            continue
+
+        if not corridor_ids:
+            warnings.append(
+                f"No corridor/junction nodes were extracted on this floor."
+            )
+            break
+
+        if node_id not in reachable_from_corridor:
+            warnings.append(
+                f"{kind.upper()} '{name}' ({node_id}) cannot reach "
+                f"the corridor network."
+            )
+
+        if kind == "room":
+            neighbours = [
+                node_by_id[n]
+                for n in adjacency[node_id]
+                if n in node_by_id
+            ]
+            if not any(n.get("kind") == "door" for n in neighbours):
+                warnings.append(
+                    f"ROOM '{name}' ({node_id}) has no directly connected "
+                    f"door node. Check its entrance."
+                )
+
+    return warnings
+
+
+# ============================================================
+# Extraction and stable IDs
+# ============================================================
+
+def extract_page(client, model, image, page_number):
+    """Extract one page and create page-prefixed node IDs."""
+    print("  Sending page to Gemini...")
+
+    response = generate_with_retry(client, model, PROMPT, image)
+
+    if not response.text:
+        raise RuntimeError("Gemini returned an empty response.")
+
+    try:
+        parsed = GraphExtraction.model_validate_json(response.text)
+    except Exception as exc:
+        raise RuntimeError(
+            f"Could not parse Gemini's structured response: {exc}"
+        ) from exc
+
+    floor_name = normalise_floor_name(parsed.floor, page_number)
+    floor_slug = slugify(floor_name)
+    prefix = f"p{page_number:03d}_{floor_slug}"
+
+    # Remap IDs so IDs remain unique across all pages.
+    id_mapping = {}
+
+    for index, node in enumerate(parsed.nodes, start=1):
+        old_id = node.id or f"node_{index}"
+        id_mapping[old_id] = f"{prefix}_{slugify(old_id)}"
+
+    nodes = []
+    for node in parsed.nodes:
+        item = node.model_dump()
+        old_id = item["id"]
+        item["id"] = id_mapping[old_id]
         item["floor"] = floor_name
-        item["page"] = page_number
+        item["x"] = clamp_percentage(item["x"])
+        item["y"] = clamp_percentage(item["y"])
+        item["confidence"] = max(
+            0.0, min(1.0, float(item.get("confidence", 0.8)))
+        )
+        nodes.append(item)
 
+    edges = []
+    for edge in parsed.edges:
+        item = edge.model_dump()
+
+        source = id_mapping.get(item.pop("source"), None)
+        target = id_mapping.get(item.pop("target"), None)
+
+        if source is None or target is None:
+            print(
+                "  WARNING: dropping edge with unknown endpoint: "
+                f"{source} -> {target}"
+            )
+            continue
+
+        item["from"] = source
+        item["to"] = target
+        item["floor"] = floor_name
         edges.append(item)
 
-    # ----- Arrow notes -----
-
-    arrow_notes: list[dict] = []
-
-    for index, note in enumerate(extraction.arrow_notes, start=1):
+    arrow_notes = []
+    for note in parsed.arrow_notes:
         item = note.model_dump()
-
-        item["id"] = f"{prefix}_arrow_{index:03d}"
-        item["floor"] = floor_name
-        item["page"] = page_number
-
         old_target = item.get("target_node_id")
-        if old_target:
-            item["target_node_id"] = id_map.get(old_target)
+        item["target_node_id"] = id_mapping.get(old_target, old_target)
+        item["floor"] = floor_name
+        item["x"] = clamp_percentage(item["x"])
+        item["y"] = clamp_percentage(item["y"])
+
+        if item.get("label_x") is not None:
+            item["label_x"] = clamp_percentage(item["label_x"])
+        if item.get("label_y") is not None:
+            item["label_y"] = clamp_percentage(item["label_y"])
 
         arrow_notes.append(item)
 
-    return {
-        "page": page_number,
+    graph = {
         "floor": floor_name,
+        "page": page_number,
         "nodes": nodes,
         "edges": edges,
         "arrow_notes": arrow_notes,
     }
 
+    warnings = validate_graph(nodes, edges)
+    graph["validation_warnings"] = warnings
+
+    print(f"  Floor: {floor_name}")
+    print(
+        f"  Nodes: {len(nodes)} | Edges: {len(edges)} | "
+        f"Arrow notes: {len(arrow_notes)}"
+    )
+
+    if warnings:
+        print(f"  Connectivity warnings: {len(warnings)}")
+        for warning in warnings:
+            print(f"    - {warning}")
+    else:
+        print("  Graph validation: no connectivity issues detected.")
+
+    return graph
+
 
 # ============================================================
-# 6. Annotated preview
+# Preview image
 # ============================================================
 
-NODE_COLORS = {
-    "room": "lime",
-    "door": "orange",
-    "junction": "cyan",
-    "turning_point": "magenta",
-    "stairs": "red",
-    "lift": "deepskyblue",
-    "entrance": "yellow",
-    "other": "white",
-}
+def draw_preview(image, graph, output_path):
+    """Draw nodes, graph edges and arrow annotations over the page."""
+    width, height = image.size
+    fig, ax = plt.subplots(figsize=(14, 14 * height / width))
 
-
-def draw_preview(
-    page_image: Image.Image,
-    page_graph: dict,
-    output_path: Path,
-) -> None:
-
-    width, height = page_image.size
-
-    fig, ax = plt.subplots(figsize=(16, 12))
-    ax.imshow(page_image)
+    ax.imshow(image)
     ax.set_xlim(0, width)
     ax.set_ylim(height, 0)
     ax.axis("off")
 
-    nodes = page_graph["nodes"]
-    edges = page_graph["edges"]
-    notes = page_graph["arrow_notes"]
+    node_by_id = {node["id"]: node for node in graph["nodes"]}
 
-    node_by_id = {node["id"]: node for node in nodes}
-
-    def pixel_xy(item: dict) -> tuple[float, float]:
+    def pixel_position(node):
         return (
-            float(item["x"]) * width / 100,
-            float(item["y"]) * height / 100,
+            node["x"] / 100.0 * width,
+            node["y"] / 100.0 * height,
         )
 
-    # Walkable edges.
-    for edge in edges:
-        source = node_by_id.get(edge["from"])
-        target = node_by_id.get(edge["to"])
+    # Draw edges behind nodes.
+    for edge in graph["edges"]:
+        source_id = edge["from"]
+        target_id = edge["to"]
 
-        if source is None or target is None:
+        if source_id not in node_by_id or target_id not in node_by_id:
             continue
 
-        x1, y1 = pixel_xy(source)
-        x2, y2 = pixel_xy(target)
+        x1, y1 = pixel_position(node_by_id[source_id])
+        x2, y2 = pixel_position(node_by_id[target_id])
 
         ax.plot(
             [x1, x2],
             [y1, y2],
-            color="deepskyblue",
-            linewidth=1.5,
+            color="cyan",
+            linewidth=1.3,
             alpha=0.85,
-            zorder=3,
+            zorder=2,
         )
 
-    # Nodes and labels.
-    for node in nodes:
-        x, y = pixel_xy(node)
+    colours = {
+        "room": "lime",
+        "door": "orange",
+        "corridor": "deepskyblue",
+        "junction": "magenta",
+        "turning_point": "yellow",
+        "stairs": "red",
+        "lift": "white",
+        "entrance": "blue",
+        "other": "grey",
+    }
+
+    # Draw nodes and labels.
+    for node in graph["nodes"]:
+        x, y = pixel_position(node)
         kind = node.get("kind", "other")
-        color = NODE_COLORS.get(kind, "white")
+        colour = colours.get(kind, "grey")
 
-        marker = "s" if kind in ("stairs", "lift") else "o"
-        size = 85 if kind in ("stairs", "lift") else 42
+        if kind == "lift":
+            ax.scatter(
+                x, y, s=110, marker="s",
+                c=colour, edgecolors="black", linewidths=1.5,
+                zorder=5,
+            )
+        elif kind == "room":
+            ax.scatter(
+                x, y, s=65, marker="o",
+                c=colour, edgecolors="black", linewidths=0.7,
+                zorder=5,
+            )
+        else:
+            ax.scatter(
+                x, y, s=40, marker="o",
+                c=colour, edgecolors="black", linewidths=0.5,
+                zorder=5,
+            )
 
-        ax.scatter(
-            x,
-            y,
-            c=color,
-            marker=marker,
-            s=size,
-            edgecolors="black",
-            linewidths=0.7,
-            zorder=5,
-        )
+        label = node.get("name", node["id"])
+        if len(label) > 32:
+            label = label[:29] + "..."
 
         ax.annotate(
-            f'{node["name"]} [{kind}]',
+            label,
             (x, y),
-            xytext=(5, -8),
+            xytext=(4, -5),
             textcoords="offset points",
-            fontsize=7,
-            color="white",
+            fontsize=6,
+            color="black",
             bbox={
-                "facecolor": "black",
-                "alpha": 0.7,
-                "pad": 1.5,
+                "boxstyle": "round,pad=0.15",
+                "facecolor": "white",
+                "alpha": 0.75,
+                "edgecolor": "none",
             },
             zorder=6,
         )
 
-    # Arrow notes and targets.
-    for note in notes:
-        x = float(note["x"]) * width / 100
-        y = float(note["y"]) * height / 100
+    # Draw arrow-note targets.
+    for note in graph["arrow_notes"]:
+        x = note["x"] / 100.0 * width
+        y = note["y"] / 100.0 * height
 
         ax.scatter(
-            x,
-            y,
-            marker="x",
-            color="orange",
-            s=90,
-            linewidths=2,
+            x, y, s=100, marker="x",
+            c="red", linewidths=2, zorder=7,
+        )
+
+        text = note.get("text", "Arrow")
+        ax.annotate(
+            text,
+            (x, y),
+            xytext=(5, 5),
+            textcoords="offset points",
+            fontsize=6,
+            color="red",
+            bbox={
+                "boxstyle": "round,pad=0.15",
+                "facecolor": "white",
+                "alpha": 0.8,
+                "edgecolor": "red",
+            },
             zorder=8,
         )
 
-        label_x = note.get("label_x")
-        label_y = note.get("label_y")
-
-        if label_x is not None and label_y is not None:
-            lx = float(label_x) * width / 100
-            ly = float(label_y) * height / 100
-
-            ax.annotate(
-                "",
-                xy=(x, y),
-                xytext=(lx, ly),
-                arrowprops={
-                    "arrowstyle": "->",
-                    "color": "orange",
-                    "linewidth": 1.5,
-                },
-                zorder=7,
-            )
-
-            text_xy = (lx, ly)
-        else:
-            text_xy = (x, y)
-
-        ax.annotate(
-            f'NOTE: {note["text"]}',
-            text_xy,
-            xytext=(5, 5),
-            textcoords="offset points",
-            fontsize=7,
-            color="white",
-            bbox={
-                "facecolor": "darkorange",
-                "alpha": 0.85,
-                "pad": 2,
-            },
-            zorder=9,
-        )
-
-    ax.set_title(
-        f'Page {page_graph["page"]} — {page_graph["floor"]}\n'
-        f'{len(nodes)} nodes | {len(edges)} edges | '
-        f'{len(notes)} arrow notes',
-        fontsize=13,
+    # Display validation issues in the image title.
+    warnings = graph.get("validation_warnings", [])
+    status = (
+        f"{len(warnings)} validation warning(s)"
+        if warnings else "validation passed"
     )
 
+    ax.set_title(
+        f"{graph['floor']} — {len(graph['nodes'])} nodes, "
+        f"{len(graph['edges'])} edges — {status}",
+        fontsize=11,
+    )
+
+    output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     fig.savefig(
         output_path,
-        dpi=160,
+        dpi=150,
         bbox_inches="tight",
         pad_inches=0.1,
     )
@@ -630,40 +706,118 @@ def draw_preview(
 
 
 # ============================================================
-# 7. Main and checkpoint/resume
+# Checkpoint and output
 # ============================================================
 
-def main() -> None:
+def save_json(data, path):
+    """Atomically write JSON to avoid leaving a partially written file."""
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary_path = path.with_suffix(path.suffix + ".tmp")
+
+    with temporary_path.open("w", encoding="utf-8") as file:
+        json.dump(data, file, indent=2, ensure_ascii=False)
+
+    temporary_path.replace(path)
+
+
+def load_checkpoint(path):
+    path = Path(path)
+    if not path.exists():
+        return {}
+
+    try:
+        with path.open("r", encoding="utf-8") as file:
+            data = json.load(file)
+        return data.get("pages", {})
+    except (json.JSONDecodeError, OSError) as exc:
+        print(f"WARNING: cannot read checkpoint: {exc}")
+        return {}
+
+
+def build_final_output(page_graphs, pdf_path):
+    nodes = []
+    edges = []
+    arrow_notes = []
+    floors = []
+
+    for page_number in sorted(page_graphs, key=lambda x: int(x)):
+        graph = page_graphs[page_number]
+
+        floors.append({
+            "name": graph["floor"],
+            "page": graph["page"],
+        })
+        nodes.extend(graph["nodes"])
+        edges.extend(graph["edges"])
+        arrow_notes.extend(graph["arrow_notes"])
+
+    all_warnings = []
+    for page_number in sorted(page_graphs, key=lambda x: int(x)):
+        graph = page_graphs[page_number]
+        for warning in graph.get("validation_warnings", []):
+            all_warnings.append({
+                "floor": graph["floor"],
+                "page": graph["page"],
+                "warning": warning,
+            })
+
+    return {
+        "metadata": {
+            "source_pdf": str(pdf_path),
+            "page_count": len(page_graphs),
+            "node_count": len(nodes),
+            "edge_count": len(edges),
+            "arrow_note_count": len(arrow_notes),
+            "validation_warning_count": len(all_warnings),
+            "coordinate_system": (
+                "x and y are percentages from 0 to 100 "
+                "relative to each PDF page"
+            ),
+            "cross_floor_edges_created": False,
+        },
+        "floors": floors,
+        "nodes": nodes,
+        "edges": edges,
+        "arrow_notes": arrow_notes,
+        "validation_warnings": all_warnings,
+    }
+
+
+# ============================================================
+# Main
+# ============================================================
+
+def main():
     parser = argparse.ArgumentParser(
         description="Extract a multi-floor navigation graph from a PDF."
     )
-
-    parser.add_argument("pdf", help="Input PDF floor plan")
+    parser.add_argument("pdf", help="Path to the floor-plan PDF")
     parser.add_argument(
         "--output",
         default="map_graph.json",
-        help="Output graph JSON file",
+        help="Output JSON path (default: map_graph.json)",
     )
     parser.add_argument(
         "--model",
-        default="gemini-3.8-flash",
-        help="Gemini model name",
+        default=DEFAULT_MODEL,
+        help=f"Gemini model (default: {DEFAULT_MODEL})",
     )
     parser.add_argument(
         "--dpi",
         type=int,
-        default=180,
-        help="PDF rendering resolution",
+        default=160,
+        help="PDF rendering resolution (default: 160)",
     )
     parser.add_argument(
         "--previews",
         default="map_previews",
-        help="Preview output directory",
+        help="Preview output directory (default: map_previews)",
     )
     parser.add_argument(
         "--no-resume",
         action="store_true",
-        help="Ignore the existing checkpoint and process every page again",
+        help="Reprocess all pages instead of reusing checkpoint data",
     )
 
     args = parser.parse_args()
@@ -672,203 +826,141 @@ def main() -> None:
     output_path = Path(args.output).expanduser().resolve()
     preview_dir = Path(args.previews).expanduser().resolve()
 
-    # Keep checkpoint next to the output JSON.
+    if not pdf_path.exists():
+        sys.exit(f"ERROR: PDF not found: {pdf_path}")
+
+    if args.dpi < 72:
+        sys.exit("ERROR: --dpi must be at least 72.")
+
     checkpoint_path = output_path.with_name(
         output_path.stem + ".checkpoint.json"
     )
 
-    if not pdf_path.is_file():
-        parser.error(f"PDF not found: {pdf_path}")
+    print(f"PDF:        {pdf_path}")
+    print(f"Output:     {output_path}")
+    print(f"Checkpoint: {checkpoint_path}")
+    print(f"Previews:   {preview_dir}")
+    print(f"Model:      {args.model}")
 
-    if args.dpi <= 0:
-        parser.error("--dpi must be greater than zero")
+    try:
+        client = make_client()
+    except Exception as exc:
+        sys.exit(f"ERROR: {exc}")
 
-    api_key = os.environ.get("GEMINI_API_KEY")
-    if not api_key:
-        parser.error("GEMINI_API_KEY environment variable is not set")
+    try:
+        pdf = fitz.open(pdf_path)
+    except Exception as exc:
+        sys.exit(f"ERROR: could not open PDF: {exc}")
 
-    # Load checkpoint only when it belongs to this PDF.
-    completed_pages: dict[str, dict] = {}
-
-    if checkpoint_path.exists() and not args.no_resume:
-        try:
-            saved = json.loads(
-                checkpoint_path.read_text(encoding="utf-8")
-            )
-
-            if saved.get("source_pdf") == str(pdf_path):
-                completed_pages = saved.get("pages", {})
-                print(
-                    f"Loaded checkpoint: {len(completed_pages)} "
-                    "previously completed page(s)."
-                )
-            else:
-                print(
-                    "Checkpoint belongs to a different PDF; "
-                    "starting fresh."
-                )
-
-        except (OSError, json.JSONDecodeError) as exc:
-            print(
-                f"Could not read checkpoint ({exc}); starting fresh.",
-                file=sys.stderr,
-            )
+    if len(pdf) == 0:
+        pdf.close()
+        sys.exit("ERROR: PDF contains no pages.")
 
     if args.no_resume:
-        completed_pages = {}
-
-    client = genai.Client(api_key=api_key)
-
-    with fitz.open(pdf_path) as pdf:
-        total_pages = len(pdf)
-
-        print(f"PDF: {pdf_path}")
-        print(f"Pages: {total_pages}")
-        print(f"Model: {args.model}")
-        print(f"Checkpoint: {checkpoint_path}")
-
-        for page_index, page in enumerate(pdf):
-            page_number = page_index + 1
-            page_key = str(page_number)
-
+        page_graphs = {}
+        print("Resume disabled: all pages will be reprocessed.")
+    else:
+        page_graphs = load_checkpoint(checkpoint_path)
+        if page_graphs:
             print(
-                f"\nPage {page_number}/{total_pages}",
-                flush=True,
+                f"Loaded checkpoint with {len(page_graphs)} "
+                f"previously extracted page(s)."
             )
 
-            # Render the page even when the graph is cached, so previews
-            # can be regenerated if needed.
-            page_image = render_pdf_page(page, args.dpi)
+    try:
+        for page_index in range(len(pdf)):
+            page_number = page_index + 1
+            key = str(page_number)
 
-            if page_key in completed_pages:
-                page_graph = completed_pages[page_key]
+            print(f"\nPage {page_number}/{len(pdf)}")
+
+            if key in page_graphs and not args.no_resume:
+                graph = page_graphs[key]
+                print(f"  Reusing saved extraction: {graph['floor']}")
                 print(
-                    f"  Reusing saved extraction: "
-                    f'{page_graph.get("floor", "Unknown floor")}'
+                    f"  Nodes: {len(graph['nodes'])} | "
+                    f"Edges: {len(graph['edges'])} | "
+                    f"Arrow notes: {len(graph['arrow_notes'])}"
                 )
-            else:
-                print("  Calling Gemini...")
 
-                # If this fails after retries, earlier pages remain saved.
-                page_graph = extract_page(
+                # Regenerate preview even when reusing the extraction.
+                image = render_page(pdf[page_index], args.dpi)
+                preview_path = preview_dir / (
+                    f"graph_page_{page_number:03d}.png"
+                )
+                draw_preview(image, graph, preview_path)
+                print(f"  Preview: {preview_path}")
+                continue
+
+            image = render_page(pdf[page_index], args.dpi)
+
+            try:
+                graph = extract_page(
                     client=client,
                     model=args.model,
-                    page_image=page_image,
+                    image=image,
                     page_number=page_number,
                 )
-
-                completed_pages[page_key] = page_graph
-
-                # Save immediately after each successful page.
-                save_json(
-                    checkpoint_path,
-                    {
-                        "source_pdf": str(pdf_path),
-                        "pages": completed_pages,
-                    },
-                )
-
+            except Exception as exc:
                 print(
-                    f'  Extracted floor: {page_graph["floor"]}'
+                    f"\nERROR extracting page {page_number}: {exc}",
+                    file=sys.stderr,
                 )
+                print(
+                    "Previously completed pages remain in the checkpoint.",
+                    file=sys.stderr,
+                )
+                raise
 
-            preview_path = (
-                preview_dir / f"graph_page_{page_number:03d}.png"
-            )
+            page_graphs[key] = graph
 
-            draw_preview(
-                page_image,
-                page_graph,
-                preview_path,
+            preview_path = preview_dir / (
+                f"graph_page_{page_number:03d}.png"
             )
-
-            print(
-                f'  Nodes: {len(page_graph["nodes"])} | '
-                f'Edges: {len(page_graph["edges"])} | '
-                f'Arrow notes: {len(page_graph["arrow_notes"])}'
-            )
+            draw_preview(image, graph, preview_path)
             print(f"  Preview: {preview_path}")
 
-    # Assemble final graph in PDF page order.
-    page_graphs = [
-        completed_pages[str(page_number)]
-        for page_number in range(1, total_pages + 1)
-        if str(page_number) in completed_pages
-    ]
+            # Save after each successful page.
+            save_json(
+                {"pages": page_graphs},
+                checkpoint_path,
+            )
+            print(f"  Checkpoint saved: {checkpoint_path}")
 
-    if len(page_graphs) != total_pages:
-        raise RuntimeError(
-            "Not all pages were extracted. The checkpoint has been "
-            "preserved; run the command again to retry missing pages."
-        )
+    finally:
+        pdf.close()
 
-    all_nodes = [
-        node
-        for graph in page_graphs
-        for node in graph["nodes"]
-    ]
+    final_output = build_final_output(page_graphs, pdf_path)
+    save_json(final_output, output_path)
 
-    all_edges = [
-        edge
-        for graph in page_graphs
-        for edge in graph["edges"]
-    ]
+    print("\n" + "=" * 60)
+    print("EXTRACTION COMPLETE")
+    print("=" * 60)
+    print(f"Output JSON: {output_path}")
+    print(f"Preview directory: {preview_dir}")
+    print(f"Floors: {len(final_output['floors'])}")
+    print(f"Nodes: {final_output['metadata']['node_count']}")
+    print(f"Edges: {final_output['metadata']['edge_count']}")
+    print(
+        "Validation warnings: "
+        f"{final_output['metadata']['validation_warning_count']}"
+    )
 
-    all_arrow_notes = [
-        note
-        for graph in page_graphs
-        for note in graph["arrow_notes"]
-    ]
-
-    floors = [
-        {
-            "page": graph["page"],
-            "floor": graph["floor"],
-            "node_count": len(graph["nodes"]),
-            "edge_count": len(graph["edges"]),
-            "arrow_note_count": len(graph["arrow_notes"]),
-        }
-        for graph in page_graphs
-    ]
-
-    result = {
-        "metadata": {
-            "source_pdf": str(pdf_path),
-            "page_count": total_pages,
-            "floor_count": len(floors),
-            "node_count": len(all_nodes),
-            "edge_count": len(all_edges),
-            "arrow_note_count": len(all_arrow_notes),
-            "coordinate_system": (
-                "x and y are percentages from 0 to 100 relative "
-                "to each individual PDF page"
-            ),
-        },
-        "floors": floors,
-        "nodes": all_nodes,
-        "edges": all_edges,
-        "arrow_notes": all_arrow_notes,
-    }
-
-    save_json(output_path, result)
-
-    print("\nExtraction complete.")
-    print(f"JSON: {output_path}")
-    print(f"Previews: {preview_dir}")
-    print(f"Floors: {len(floors)}")
-    print(f"Nodes: {len(all_nodes)}")
-    print(f"Edges: {len(all_edges)}")
-    print(f"Arrow notes: {len(all_arrow_notes)}")
-    print(f"Checkpoint: {checkpoint_path}")
+    if final_output["validation_warnings"]:
+        print("\nReview these issues in the previews and JSON:")
+        for warning in final_output["validation_warnings"]:
+            print(
+                f"  Page {warning['page']} "
+                f"({warning['floor']}): {warning['warning']}"
+            )
 
     print(
-        "\nReview the preview images for missed labels, stairs, lifts, "
-        "arrows, and corridor connections. Cross-floor connections must "
-        "be verified before using the graph for multi-floor routing."
+        "\nNote: validation can detect disconnected nodes, but it cannot "
+        "prove that every detected connection passes through a real door. "
+        "Inspect the preview images before using the graph for navigation."
     )
 
 
 if __name__ == "__main__":
     main()
-
 
