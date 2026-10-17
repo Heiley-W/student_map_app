@@ -1,0 +1,3 @@
+fastapi
+networkx
+uvicorn[standard]
