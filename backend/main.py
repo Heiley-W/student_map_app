@@ -34,7 +34,12 @@ def health():
 @app.post("/route")
 def calculate_route(request: RouteRequest):
     try:
-        map_data = json.loads(MAP_PATH.read_text(encoding="utf-8"))
+        all_map_data = json.loads(MAP_PATH.read_text(encoding="utf-8"))
+        ground_floor = all_map_data["pages"]["1"]
+        map_data = {
+            "nodes": ground_floor["nodes"],
+            "edges": ground_floor["edges"]
+        }
         return find_route(
             map_data,
             start=request.start,
