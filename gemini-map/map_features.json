@@ -1,0 +1,283 @@
+{
+  "locations": [
+    {
+      "id": "the_great_hall",
+      "name": "The Great Hall",
+      "type": "room",
+      "x": 45.6,
+      "y": 89.4,
+      "confidence": 0.99,
+      "notes": "Large prominent hall labeled 'The Great Hall' at bottom left-center."
+    },
+    {
+      "id": "chamber_of_reception",
+      "name": "Chamber of Reception",
+      "type": "room",
+      "x": 53.6,
+      "y": 90.6,
+      "confidence": 0.95,
+      "notes": "Adjacent to the Great Hall and Entrance Hall."
+    },
+    {
+      "id": "entrance_hall",
+      "name": "Entrance Hall",
+      "type": "entrance",
+      "x": 50.3,
+      "y": 85.6,
+      "confidence": 0.95,
+      "notes": "Corridor/hallway connecting Marble Staircase, Viaduct Courtyard, and Great Hall."
+    },
+    {
+      "id": "viaduct_courtyard",
+      "name": "Viaduct Courtyard",
+      "type": "other",
+      "x": 56.5,
+      "y": 82.2,
+      "confidence": 0.98,
+      "notes": "Open courtyard labeled 'Viaduct Courtyard' leading onto Viaduct Bridge."
+    },
+    {
+      "id": "viaduct_bridge",
+      "name": "Viaduct Bridge",
+      "type": "corridor",
+      "x": 60.1,
+      "y": 64.7,
+      "confidence": 0.95,
+      "notes": "Long exterior bridge labeled 'Viaduct Bridge' spanning between Viaduct Courtyard and the Practice Rooms/upper terrace."
+    },
+    {
+      "id": "boat_house",
+      "name": "Boat House",
+      "type": "room",
+      "x": 91.5,
+      "y": 89.2,
+      "confidence": 0.98,
+      "notes": "Structure labeled 'Boat House' by the waterfront path."
+    },
+    {
+      "id": "marble_staircase",
+      "name": "Marble Staircase",
+      "type": "stair",
+      "x": 46.8,
+      "y": 76.5,
+      "confidence": 0.98,
+      "notes": "Labeled 'Marble Staircase' enclosed by lettered landings A-F."
+    },
+    {
+      "id": "south_courtyard",
+      "name": "South Courtyard",
+      "type": "other",
+      "x": 36.4,
+      "y": 68.2,
+      "confidence": 0.98,
+      "notes": "Central open courtyard enclosed by numbered classrooms and corridors."
+    },
+    {
+      "id": "clock_tower",
+      "name": "Clock Tower",
+      "type": "room",
+      "x": 16.7,
+      "y": 67.2,
+      "confidence": 0.98,
+      "notes": "Labeled 'Clock Tower' directly adjacent to Clock Tower Courtyard."
+    },
+    {
+      "id": "clock_tower_courtyard",
+      "name": "Clock Tower Courtyard",
+      "type": "other",
+      "x": 7.8,
+      "y": 67.1,
+      "confidence": 0.98,
+      "notes": "Open courtyard structure on the far left labeled 'Clock Tower Courtyard'."
+    },
+    {
+      "id": "clock_tower_bridge",
+      "name": "Clock Tower Bridge",
+      "type": "corridor",
+      "x": 22.8,
+      "y": 67.5,
+      "confidence": 0.92,
+      "notes": "Labeled 'Clock Tower Bridge (Access via 3rd Floor)' connecting Clock Tower to classroom corridor."
+    },
+    {
+      "id": "griffindor_tower",
+      "name": "Griffindor Tower",
+      "type": "stair",
+      "x": 24.3,
+      "y": 56.6,
+      "confidence": 0.95,
+      "notes": "Circular stair tower labeled 'Griffindor Tower'."
+    },
+    {
+      "id": "suspension_bridge",
+      "name": "Suspension Bridge",
+      "type": "corridor",
+      "x": 41.6,
+      "y": 50.8,
+      "confidence": 0.95,
+      "notes": "Bridge connecting classroom block 5 to the Astronomy Tower Courtyard area."
+    },
+    {
+      "id": "stone_bridge",
+      "name": "Stone Bridge",
+      "type": "corridor",
+      "x": 50.9,
+      "y": 56.8,
+      "confidence": 0.95,
+      "notes": "Bridge labeled 'Stone Bridge (Access via 2nd Floor)'."
+    },
+    {
+      "id": "astronomy_tower_courtyard",
+      "name": "Astronomy Tower Courtyard",
+      "type": "other",
+      "x": 48.9,
+      "y": 43.6,
+      "confidence": 0.98,
+      "notes": "Paved courtyard south of the Astronomy Tower labeled 'Astronomy Tower Courtyard'."
+    },
+    {
+      "id": "astronomy_tower",
+      "name": "Astronomy Tower",
+      "type": "stair",
+      "x": 48.7,
+      "y": 36.8,
+      "confidence": 0.98,
+      "notes": "Circular tower staircase labeled 'Astronomy Tower'."
+    },
+    {
+      "id": "north_courtyard",
+      "name": "North Courtyard",
+      "type": "other",
+      "x": 48.7,
+      "y": 29.8,
+      "confidence": 0.98,
+      "notes": "Central courtyard labeled 'North Courtyard'."
+    },
+    {
+      "id": "oxford_corridor",
+      "name": "Oxford Corridor",
+      "type": "corridor",
+      "x": 61.8,
+      "y": 30.8,
+      "confidence": 0.95,
+      "notes": "Corridor labeled 'Oxford Corridor' running vertically between classroom wings."
+    },
+    {
+      "id": "divination_tower",
+      "name": "Divination Tower",
+      "type": "stair",
+      "x": 61.8,
+      "y": 42.0,
+      "confidence": 0.95,
+      "notes": "Tower staircase surrounded by the Serpentine Corridor."
+    },
+    {
+      "id": "staff_room",
+      "name": "Staff Room",
+      "type": "room",
+      "x": 58.9,
+      "y": 20.8,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Staff Room' north of Muggle Studies."
+    },
+    {
+      "id": "muggle_studies",
+      "name": "Muggle Studies",
+      "type": "room",
+      "x": 58.8,
+      "y": 30.6,
+      "confidence": 0.95,
+      "notes": "Classroom labeled 'Muggle Studies'."
+    },
+    {
+      "id": "assembly_hall",
+      "name": "Assembly Hall",
+      "type": "room",
+      "x": 65.0,
+      "y": 31.8,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Assembly Hall' east of Oxford Corridor."
+    },
+    {
+      "id": "care_of_magical_creatures",
+      "name": "Care of Magical Creatures",
+      "type": "room",
+      "x": 65.0,
+      "y": 24.6,
+      "confidence": 0.95,
+      "notes": "Classroom labeled 'Care of Magical Creatures'."
+    },
+    {
+      "id": "herbology",
+      "name": "Herbology",
+      "type": "room",
+      "x": 61.8,
+      "y": 9.8,
+      "confidence": 0.92,
+      "notes": "Room labeled 'Herbology' leading towards the greenhouses."
+    },
+    {
+      "id": "magical_theory",
+      "name": "Magical Theory",
+      "type": "room",
+      "x": 39.0,
+      "y": 21.8,
+      "confidence": 0.95,
+      "notes": "Classroom labeled 'Magical Theory' at the northwest wing."
+    },
+    {
+      "id": "apparition_test_room",
+      "name": "Apparition Test Room",
+      "type": "room",
+      "x": 39.0,
+      "y": 27.6,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Apparition Test Room'."
+    },
+    {
+      "id": "detention_hall",
+      "name": "Detention Hall",
+      "type": "room",
+      "x": 39.0,
+      "y": 36.8,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Detention Hall'."
+    },
+    {
+      "id": "quidditch_storage",
+      "name": "Quittich Storage",
+      "type": "room",
+      "x": 29.8,
+      "y": 43.5,
+      "confidence": 0.95,
+      "notes": "Outlying building labeled 'Quittich Storage'."
+    },
+    {
+      "id": "practice_room_1",
+      "name": "Practice Room I",
+      "type": "room",
+      "x": 57.5,
+      "y": 53.0,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Practice Room I' near the stone bridge and viaduct junction."
+    },
+    {
+      "id": "practice_room_2",
+      "name": "Practice Room II",
+      "type": "room",
+      "x": 66.5,
+      "y": 53.0,
+      "confidence": 0.95,
+      "notes": "Room labeled 'Practice Room II' across the junction."
+    },
+    {
+      "id": "abandoned_wing",
+      "name": "Abandoned Wing",
+      "type": "room",
+      "x": 69.5,
+      "y": 44.5,
+      "confidence": 0.92,
+      "notes": "Room labeled 'Abandoned Wing'."
+    }
+  ]
+}

@@ -1,0 +1,211 @@
+{
+  "locations": [
+    {
+      "id": "great_hall",
+      "name": "Great Hall",
+      "type": "room",
+      "x": 69.2,
+      "y": 68.4,
+      "confidence": 0.99,
+      "notes": "Clearly labeled large rectangular assembly hall"
+    },
+    {
+      "id": "entrance_hall",
+      "name": "Entrance Hall",
+      "type": "entrance",
+      "x": 49.5,
+      "y": 62.8,
+      "confidence": 0.98,
+      "notes": "Main entrance hall leading directly to the Marble Staircase"
+    },
+    {
+      "id": "marble_staircase",
+      "name": "Marble Staircase",
+      "type": "stair",
+      "x": 49.6,
+      "y": 55.7,
+      "confidence": 0.98,
+      "notes": "Staircase labeled Marble Staircase 11 inside Entrance Hall"
+    },
+    {
+      "id": "swivelling_staircase",
+      "name": "Swivelling Staircase",
+      "type": "stair",
+      "x": 75.6,
+      "y": 52.4,
+      "confidence": 0.95,
+      "notes": "Staircase labeled Swivelling Staircase 20 near room 101"
+    },
+    {
+      "id": "friday_staircase",
+      "name": "Friday Staircase",
+      "type": "stair",
+      "x": 46.1,
+      "y": 31.2,
+      "confidence": 0.92,
+      "notes": "Staircase labeled Friday Staircase 21"
+    },
+    {
+      "id": "mcgonagalls_office",
+      "name": "McGonagall's Office",
+      "type": "room",
+      "x": 88.0,
+      "y": 27.3,
+      "confidence": 0.98,
+      "notes": "Office clearly labeled with distinctive pink icon"
+    },
+    {
+      "id": "history_of_magic",
+      "name": "History of Magic Classroom",
+      "type": "room",
+      "x": 19.4,
+      "y": 74.1,
+      "confidence": 0.98,
+      "notes": "Classroom 112 with visible desk layout"
+    },
+    {
+      "id": "vanishing_cabinet_classroom",
+      "name": "Vanishing Cabinet Classroom",
+      "type": "room",
+      "x": 26.5,
+      "y": 60.2,
+      "confidence": 0.97,
+      "notes": "Classroom labeled Vanishing Cabinet classroom 114"
+    },
+    {
+      "id": "wands_weighing_classroom",
+      "name": "Wands Weighing Classroom",
+      "type": "room",
+      "x": 34.4,
+      "y": 35.2,
+      "confidence": 0.97,
+      "notes": "Classroom labeled Wands Weighing classroom 108"
+    },
+    {
+      "id": "muggle_studies",
+      "name": "Muggle Studies Classroom",
+      "type": "room",
+      "x": 27.6,
+      "y": 13.6,
+      "confidence": 0.98,
+      "notes": "Classroom 110 shown with desk seating layout"
+    },
+    {
+      "id": "wizards_toilets",
+      "name": "Wizards Toilets",
+      "type": "room",
+      "x": 44.3,
+      "y": 22.6,
+      "confidence": 0.94,
+      "notes": "Restroom area labeled Wizards Toilets secret passage"
+    },
+    {
+      "id": "witches_toilets",
+      "name": "Witches Toilets",
+      "type": "room",
+      "x": 63.4,
+      "y": 15.1,
+      "confidence": 0.95,
+      "notes": "Restroom area labeled Witches Toilets"
+    },
+    {
+      "id": "room_101",
+      "name": "Room 101",
+      "type": "room",
+      "x": 67.6,
+      "y": 51.0,
+      "confidence": 0.96,
+      "notes": "Numbered room adjacent to Swivelling Staircase"
+    },
+    {
+      "id": "room_102",
+      "name": "Room 102",
+      "type": "room",
+      "x": 63.6,
+      "y": 31.3,
+      "confidence": 0.96,
+      "notes": "Numbered room adjacent to corridor 19"
+    },
+    {
+      "id": "room_103",
+      "name": "Room 103",
+      "type": "room",
+      "x": 89.5,
+      "y": 17.2,
+      "confidence": 0.96,
+      "notes": "Numbered room in northeastern wing"
+    },
+    {
+      "id": "room_104",
+      "name": "Room 104",
+      "type": "room",
+      "x": 79.1,
+      "y": 20.8,
+      "confidence": 0.96,
+      "notes": "Numbered room in eastern corridor section"
+    },
+    {
+      "id": "room_105",
+      "name": "Room 105",
+      "type": "room",
+      "x": 63.5,
+      "y": 22.3,
+      "confidence": 0.95,
+      "notes": "Numbered room below witches toilets"
+    },
+    {
+      "id": "room_106",
+      "name": "Room 106",
+      "type": "room",
+      "x": 57.6,
+      "y": 24.2,
+      "confidence": 0.95,
+      "notes": "Numbered room near north terrace passage"
+    },
+    {
+      "id": "room_107",
+      "name": "Room 107",
+      "type": "room",
+      "x": 43.6,
+      "y": 35.6,
+      "confidence": 0.95,
+      "notes": "Numbered room near Friday Staircase"
+    },
+    {
+      "id": "room_109",
+      "name": "Room 109",
+      "type": "room",
+      "x": 35.2,
+      "y": 27.1,
+      "confidence": 0.95,
+      "notes": "Numbered room north of Wands Weighing classroom"
+    },
+    {
+      "id": "room_111",
+      "name": "Room 111",
+      "type": "room",
+      "x": 11.6,
+      "y": 44.2,
+      "confidence": 0.95,
+      "notes": "Numbered room in far western wing"
+    },
+    {
+      "id": "room_113",
+      "name": "Room 113",
+      "type": "room",
+      "x": 17.9,
+      "y": 65.4,
+      "confidence": 0.95,
+      "notes": "Numbered room above History of Magic classroom"
+    },
+    {
+      "id": "tower_23",
+      "name": "Tower Room 23",
+      "type": "room",
+      "x": 90.8,
+      "y": 68.8,
+      "confidence": 0.94,
+      "notes": "Round turret chamber marked 23 southeast of the Great Hall"
+    }
+  ]
+}
