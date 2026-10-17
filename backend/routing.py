@@ -33,25 +33,21 @@ def find_route(
             )
 
         # Only confirmed open connections are allowed.
-        if edge.get("blocked") is not False:
+        if edge.get("blocked") is True:
             continue
 
         # Unknown accessibility is excluded when wheelchair access is needed.
-        if (
-            wheelchair_required
-            and edge.get("wheelchair_accessible") is not True
-        ):
-            continue
+        if wheelchair_required is True:
+            if edge.get("wheelchair_accessible") is False:
+                continue
 
         # Unknown card requirements are excluded until verified.
         card_required = edge.get("requires_id_card")
 
-        if card_required is not True:
-            continue
-
-        if card_required is True and not has_id_card:
-            continue
-
+        if has_id_card is False:
+            if card_required is True:
+                continue
+            
         graph.add_edge(source, target, edge_id=edge["id"])
 
     try:
