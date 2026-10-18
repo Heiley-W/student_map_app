@@ -178,6 +178,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .badge-in rect{fill:#fff;stroke:#16213E;stroke-width:1.5}
 .badge-in text{font-size:15px;fill:#16213E}
 .alabel{font-size:14px;font-weight:700;fill:#16213E;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.alabel.blocked-label{font-size:11px;font-weight:700;fill:#C8102E;stroke-width:3px}
 .draft{fill:rgba(11,95,255,.12);stroke:#0B5FFF;stroke-width:2;stroke-dasharray:6 3}
 
 .floorpanel{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:8px 6px;box-shadow:0 6px 20px rgba(10,20,40,.15);z-index:5}
@@ -1133,7 +1134,16 @@ function cardAllowed(m, card, when){
   return false;
 }
 function markersFor(kind, id){ return data.markers.filter(m => m.status==='active' && m.targetKind===kind && m.targetId===id); }
-function isOutOfOrder(kind, id, when){ return markersFor(kind,id).some(m => m.kind==='closure' || (m.kind==='event' && eventActive(m, when))); }
+function isOutOfOrder(kind, id, when){
+  const markers = markersFor(kind,id);
+  if (markers.some(m => m.kind==='closure' || (m.kind==='event' && eventActive(m, when)))) return true;
+  if (kind!=='transition') return false;
+  const transition = getEntity(kind,id);
+  return !!transition && data.transitions.some(other =>
+    other.group===transition.group &&
+    markersFor('transition',other.id).some(m => m.kind==='closure')
+  );
+}
 
 /* =====================================================================
    MOCK ROUTING — stands in for the backend. Builds a graph from the
@@ -1529,7 +1539,7 @@ function renderMap(){
   for (const tr of data.transitions.filter(x => x.floor===f)){
     const g = data.groups[tr.group]; if (!g) continue;
     const off = isOutOfOrder('transition', tr.id, now);
-    t += `<g class="ent ${isSel('transition',tr.id)?'sel':''} ${off?'off':''}" data-kind="transition" data-id="${tr.id}" transform="translate(${tr.x} ${tr.y})"><title>${esc(g.name)}</title><rect class="disc" x="-13" y="-13" width="26" height="26" rx="6" fill="#16213E"/><use href="#${g.kind==='lift'?'i-lift':'i-stairs'}" x="-9" y="-9" width="18" height="18" color="#fff"/></g>`;
+    t += `<g class="ent ${isSel('transition',tr.id)?'sel':''} ${off?'off':''}" data-kind="transition" data-id="${tr.id}" transform="translate(${tr.x} ${tr.y})"><title>${esc(g.name + (off ? ' - Blocked' : ''))}</title><rect class="disc" x="-13" y="-13" width="26" height="26" rx="6" fill="#16213E"/><use href="#${g.kind==='lift'?'i-lift':'i-stairs'}" x="-9" y="-9" width="18" height="18" color="#fff"/>${off?'<text class="alabel blocked-label" y="31">Blocked</text>':''}</g>`;
   }
   $('#lyr-trans').innerHTML = t;
 
