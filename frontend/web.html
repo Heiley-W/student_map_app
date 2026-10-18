@@ -178,6 +178,15 @@ button,input,select,textarea{font:inherit;color:inherit}
 .badge-in rect{fill:#fff;stroke:#16213E;stroke-width:1.5}
 .badge-in text{font-size:15px;fill:#16213E}
 .alabel{font-size:14px;font-weight:700;fill:#16213E;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:4px;stroke-linejoin:round;pointer-events:none}
+.room.made{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}
+.room.made:hover{fill:#AFD5F0}
+.room.temp{fill:rgba(245,183,0,.18);stroke:#B7791F;stroke-width:2;stroke-dasharray:7 4}
+.room.temp:hover{fill:rgba(245,183,0,.3)}
+.rlabel.plain{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-weight:600;fill:#1E4A72;stroke:none}
+.rlabel.temp{fill:#7A4B0C}
+.rlabel.tsub{font-size:11px;font-weight:400;fill:#7A4B0C}
+.cover{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2;pointer-events:none}
+.occ{font-family:"Helvetica Neue",Helvetica,Arial,sans-serif;font-size:10px;fill:#1E4A72;pointer-events:none}
 .draft{fill:rgba(11,95,255,.12);stroke:#0B5FFF;stroke-width:2;stroke-dasharray:6 3}
 
 .floorpanel{position:absolute;left:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--paper);border:1px solid var(--line);border-radius:999px;padding:8px 6px;box-shadow:0 6px 20px rgba(10,20,40,.15);z-index:5}
@@ -381,7 +390,6 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
       <div class="prefs">
         <div><label class="lbl" for="sel-card">Your card</label><select id="sel-card"></select></div>
         <label class="row"><input type="checkbox" class="switch" id="tg-step"> Step-free route (lifts only)</label>
-        <label class="row"><input type="checkbox" class="switch" id="tg-guided"> Visually impaired guided mode</label>
         <button class="btn primary wide" id="btn-route" type="button">Find route</button>
       </div>
     </div>
@@ -456,7 +464,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
    demo; its maps are the light-blue vector plans. Map coordinates:
    x to the right, y downwards; each floor's image fills its "bounds".
    ===================================================================== */
-const PHYSICS_SVG = {"A": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor A</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-A\">\n<polygon class=\"shell\" points=\"4,240 1456,240 1456,436 1272,436 1272,428 1194,428 1194,549 656,549 656,576 576,576 576,548 262,548 262,638 4,638\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"14\" y=\"248\" width=\"81\" height=\"83\" rx=\"2\"/>\n<rect class=\"room\" x=\"98\" y=\"248\" width=\"108\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"207\" y=\"248\" width=\"75\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"283\" y=\"248\" width=\"75\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"360\" y=\"248\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"436\" y=\"248\" width=\"142\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"593\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"674\" y=\"248\" width=\"78\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"754\" y=\"248\" width=\"80\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"835\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"915\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"996\" y=\"248\" width=\"78\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"1076\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"1157\" y=\"248\" width=\"37\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"334\" width=\"82\" height=\"66\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"402\" width=\"82\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"478\" width=\"82\" height=\"74\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"554\" width=\"82\" height=\"73\" rx=\"2\"/>\n<rect class=\"room\" x=\"160\" y=\"402\" width=\"81\" height=\"225\" rx=\"2\"/>\n<rect class=\"room\" x=\"243\" y=\"402\" width=\"31\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"276\" y=\"402\" width=\"150\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"428\" y=\"402\" width=\"148\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"409\" width=\"94\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"754\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"836\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"916\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"996\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"1076\" y=\"409\" width=\"118\" height=\"138\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"132\" y=\"248\" width=\"75\" height=\"79\" rx=\"2\"/>\n<path class=\"tread\" d=\"M142.7 250V325 M153.4 250V325 M164.1 250V325 M174.9 250V325 M185.6 250V325 M196.3 250V325\"/>\n<rect class=\"stair\" x=\"1196\" y=\"337\" width=\"76\" height=\"90\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1206.9 339V425 M1217.7 339V425 M1228.6 339V425 M1239.4 339V425 M1250.3 339V425 M1261.1 339V425\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1342\" y=\"242\" width=\"109\" height=\"93\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1386.5 285.5l10 -10l10 10ZM1386.5 291.5l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"54.5\" y=\"289.5\" dominant-baseline=\"central\"><tspan x=\"54.5\" dy=\"0\">A22</tspan></text>\n<text x=\"397\" y=\"290\" dominant-baseline=\"central\"><tspan x=\"397\" dy=\"0\">A20</tspan></text>\n<text x=\"507\" y=\"290\" dominant-baseline=\"central\"><tspan x=\"507\" dy=\"0\">A18</tspan></text>\n<text x=\"632.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"632.5\" dy=\"0\">A16</tspan></text>\n<text x=\"713\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"713\" dy=\"0\">A14</tspan></text>\n<text x=\"794\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"794\" dy=\"0\">A12</tspan></text>\n<text x=\"874.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"874.5\" dy=\"0\">A10</tspan></text>\n<text x=\"954.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"954.5\" dy=\"0\">A8</tspan></text>\n<text x=\"1035\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1035\" dy=\"0\">A6</tspan></text>\n<text x=\"1115.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1115.5\" dy=\"0\">A4</tspan></text>\n<text x=\"1175.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1175.5\" dy=\"0\">A2</tspan></text>\n<text x=\"54\" y=\"367\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A24</tspan></text>\n<text x=\"54\" y=\"439.5\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A26</tspan></text>\n<text x=\"54\" y=\"515\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A28</tspan></text>\n<text x=\"54\" y=\"590.5\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A30</tspan></text>\n<text x=\"351\" y=\"466\" dominant-baseline=\"central\"><tspan x=\"351\" dy=\"0\">A19</tspan></text>\n<text x=\"502\" y=\"466\" dominant-baseline=\"central\"><tspan x=\"502\" dy=\"0\">A17</tspan></text>\n<text x=\"705\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"705\" dy=\"0\">A15</tspan></text>\n<text x=\"793\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"793\" dy=\"0\">A13</tspan></text>\n<text x=\"875\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"875\" dy=\"0\">A9</tspan></text>\n<text x=\"955\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"955\" dy=\"0\">A7</tspan></text>\n<text x=\"1035\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"1035\" dy=\"0\">A5</tspan></text>\n<text x=\"1135\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"1135\" dy=\"0\">A1/3</tspan></text>\n</g></g>\n</svg>\n", "B": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor B</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-B\">\n<polygon class=\"shell\" points=\"4,238 1456,238 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 264,547 264,637 4,637\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"246\" width=\"82\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"96\" y=\"246\" width=\"107\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"205\" y=\"246\" width=\"73\" height=\"74\" rx=\"2\"/>\n<rect class=\"room\" x=\"279\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"246\" width=\"74\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"429\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"504\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"580\" y=\"246\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"328\" width=\"82\" height=\"65\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"394\" width=\"82\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"469\" width=\"82\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"542\" width=\"82\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"157\" y=\"395\" width=\"81\" height=\"219\" rx=\"2\"/>\n<rect class=\"room\" x=\"240\" y=\"395\" width=\"337\" height=\"125\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"130\" y=\"246\" width=\"74\" height=\"76\" rx=\"2\"/>\n<path class=\"tread\" d=\"M140.6 248V320 M151.1 248V320 M161.7 248V320 M172.3 248V320 M182.9 248V320 M193.4 248V320\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"53\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B14</tspan></text>\n<text x=\"315.5\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"315.5\" dy=\"0\">B12</tspan></text>\n<text x=\"391\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"391\" dy=\"0\">B12A</tspan></text>\n<text x=\"53\" y=\"360.5\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B16</tspan></text>\n<text x=\"53\" y=\"430\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B18</tspan></text>\n<text x=\"53\" y=\"504.5\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B20</tspan></text>\n<text x=\"53\" y=\"578\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B22</tspan></text>\n</g></g>\n</svg>\n", "C": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor C</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-C\">\n<polygon class=\"shell\" points=\"4,238 1456,238 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 264,547 264,638 4,638\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"248\" width=\"80\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"95\" y=\"248\" width=\"107\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"204\" y=\"248\" width=\"72\" height=\"74\" rx=\"2\"/>\n<rect class=\"room\" x=\"278\" y=\"248\" width=\"74\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"248\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"429\" y=\"248\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"504\" y=\"248\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"580\" y=\"248\" width=\"71\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"330\" width=\"80\" height=\"65\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"398\" width=\"80\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"472\" width=\"80\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"546\" width=\"80\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"156\" y=\"398\" width=\"80\" height=\"219\" rx=\"2\"/>\n<rect class=\"room\" x=\"239\" y=\"398\" width=\"337\" height=\"124\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"248\" width=\"75\" height=\"77\" rx=\"2\"/>\n<path class=\"tread\" d=\"M138.7 250V323 M149.4 250V323 M160.1 250V323 M170.9 250V323 M181.6 250V323 M192.3 250V323\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"52\" y=\"288\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C14</tspan></text>\n<text x=\"52\" y=\"362.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C16</tspan></text>\n<text x=\"52\" y=\"433.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C18</tspan></text>\n<text x=\"52\" y=\"508\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C20</tspan></text>\n<text x=\"52\" y=\"581.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C22</tspan></text>\n</g></g>\n</svg>\n", "D": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor D</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-D\">\n<polygon class=\"shell\" points=\"4,240 1456,240 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 262,547 262,642 4,642\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"250\" width=\"80\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"95\" y=\"250\" width=\"107\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"204\" y=\"250\" width=\"72\" height=\"78\" rx=\"2\"/>\n<rect class=\"room\" x=\"278\" y=\"250\" width=\"74\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"250\" width=\"72\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"428\" y=\"250\" width=\"148\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"579\" y=\"250\" width=\"73\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"338\" width=\"80\" height=\"68\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"408\" width=\"80\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"485\" width=\"80\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"562\" width=\"80\" height=\"76\" rx=\"2\"/>\n<rect class=\"room\" x=\"156\" y=\"408\" width=\"80\" height=\"229\" rx=\"2\"/>\n<rect class=\"room\" x=\"238\" y=\"408\" width=\"149\" height=\"22\" rx=\"2\"/>\n<rect class=\"room\" x=\"238\" y=\"431\" width=\"60\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"300\" y=\"431\" width=\"29\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"331\" y=\"431\" width=\"55\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"388\" y=\"408\" width=\"188\" height=\"130\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"250\" width=\"75\" height=\"80\" rx=\"2\"/>\n<path class=\"tread\" d=\"M138.7 252V328 M149.4 252V328 M160.1 252V328 M170.9 252V328 M181.6 252V328 M192.3 252V328\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"52\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D14</tspan></text>\n<text x=\"315\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"315\" dy=\"0\">D12</tspan></text>\n<text x=\"390\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"390\" dy=\"0\">D11</tspan></text>\n<text x=\"52\" y=\"372\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D16</tspan></text>\n<text x=\"52\" y=\"445.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D18</tspan></text>\n<text x=\"52\" y=\"522.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D20</tspan></text>\n<text x=\"52\" y=\"600\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D22</tspan></text>\n<text x=\"268\" y=\"484.5\" dominant-baseline=\"central\"><tspan x=\"268\" dy=\"0\">D17A</tspan></text>\n<text x=\"358.5\" y=\"484.5\" dominant-baseline=\"central\"><tspan x=\"358.5\" dy=\"0\">D17</tspan></text>\n</g></g>\n</svg>\n", "E": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor E</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-E\">\n<polygon class=\"shell\" points=\"6,244 1176,244 1176,240 1456,240 1456,436 1272,436 1272,430 1176,430 1176,548 656,548 656,576 576,576 576,548 6,548\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"10\" y=\"256\" width=\"74\" height=\"78\" rx=\"2\"/>\n<rect class=\"room\" x=\"281\" y=\"256\" width=\"75\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"358\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"434\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"510\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"588\" y=\"256\" width=\"73\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"664\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"740\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"816\" y=\"256\" width=\"116\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"935\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"1012\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"1088\" y=\"256\" width=\"86\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"10\" y=\"336\" width=\"74\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"10\" y=\"411\" width=\"228\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"282\" y=\"408\" width=\"82\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"366\" y=\"410\" width=\"210\" height=\"134\" rx=\"2\"/>\n<rect class=\"room\" x=\"656\" y=\"408\" width=\"82\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"740\" y=\"408\" width=\"74\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"816\" y=\"408\" width=\"270\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"1088\" y=\"408\" width=\"86\" height=\"132\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"256\" width=\"77\" height=\"79\" rx=\"2\"/>\n<path class=\"tread\" d=\"M139.0 258V333 M150.0 258V333 M161.0 258V333 M172.0 258V333 M183.0 258V333 M194.0 258V333\"/>\n<rect class=\"stair\" x=\"1190\" y=\"337\" width=\"82\" height=\"93\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 339V428 M1213.4 339V428 M1225.1 339V428 M1236.9 339V428 M1248.6 339V428 M1260.3 339V428\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"318.5\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"318.5\" dy=\"0\">E20</tspan></text>\n<text x=\"395\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"395\" dy=\"0\">E18</tspan></text>\n<text x=\"471\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"471\" dy=\"0\">E16</tspan></text>\n<text x=\"624.5\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"624.5\" dy=\"0\">E14</tspan></text>\n<text x=\"777\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"777\" dy=\"0\">E10</tspan></text>\n<text x=\"874\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"874\" dy=\"0\">E8</tspan></text>\n<text x=\"972\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"972\" dy=\"0\">E6</tspan></text>\n<text x=\"1049\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"1049\" dy=\"0\">E4</tspan></text>\n<text x=\"1131\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"1131\" dy=\"0\">E2</tspan></text>\n<text x=\"47\" y=\"372\" dominant-baseline=\"central\"><tspan x=\"47\" dy=\"0\">QDT</tspan></text>\n<text x=\"323\" y=\"451.575\" dominant-baseline=\"central\"><tspan x=\"323\" dy=\"0\">E15</tspan><tspan x=\"323\" dy=\"14.95\">Post</tspan><tspan x=\"323\" dy=\"14.95\">Finance</tspan><tspan x=\"323\" dy=\"14.95\">Safety</tspan></text>\n<text x=\"951\" y=\"474\" dominant-baseline=\"central\"><tspan x=\"951\" dy=\"0\">E3/E7</tspan></text>\n<text x=\"1131\" y=\"474\" dominant-baseline=\"central\"><tspan x=\"1131\" dy=\"0\">E1</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M1176 244V548\"/>\n<path class=\"wall\" d=\"M205 338H222M264 338H281\"/>\n<path class=\"door\" d=\"M222 338V296\"/><path class=\"swing\" d=\"M264 338A42 42 0 0 0 222 296\"/>\n</g></g>\n</svg>\n"};
+const PHYSICS_SVG = {"A": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor A</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-A\">\n<polygon class=\"shell\" points=\"4,240 1456,240 1456,436 1272,436 1272,428 1194,428 1194,549 656,549 656,576 576,576 576,548 262,548 262,638 4,638\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"14\" y=\"248\" width=\"81\" height=\"83\" rx=\"2\"/>\n<rect class=\"room\" x=\"98\" y=\"248\" width=\"32\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"283\" y=\"248\" width=\"75\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"360\" y=\"248\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"436\" y=\"248\" width=\"142\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"593\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"674\" y=\"248\" width=\"78\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"754\" y=\"248\" width=\"80\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"835\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"915\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"996\" y=\"248\" width=\"78\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"1076\" y=\"248\" width=\"79\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"1157\" y=\"248\" width=\"37\" height=\"88\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"334\" width=\"82\" height=\"66\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"402\" width=\"82\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"478\" width=\"82\" height=\"74\" rx=\"2\"/>\n<rect class=\"room\" x=\"13\" y=\"554\" width=\"82\" height=\"73\" rx=\"2\"/>\n<rect class=\"room\" x=\"160\" y=\"402\" width=\"81\" height=\"225\" rx=\"2\"/>\n<rect class=\"room\" x=\"243\" y=\"402\" width=\"31\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"276\" y=\"402\" width=\"150\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"428\" y=\"402\" width=\"148\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"409\" width=\"94\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"754\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"836\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"916\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"996\" y=\"409\" width=\"78\" height=\"138\" rx=\"2\"/>\n<rect class=\"room\" x=\"1076\" y=\"409\" width=\"118\" height=\"138\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"132\" y=\"248\" width=\"75\" height=\"79\" rx=\"2\"/>\n<path class=\"tread\" d=\"M142.7 250V325 M153.4 250V325 M164.1 250V325 M174.9 250V325 M185.6 250V325 M196.3 250V325\"/>\n<rect class=\"stair\" x=\"1196\" y=\"337\" width=\"76\" height=\"90\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1206.9 339V425 M1217.7 339V425 M1228.6 339V425 M1239.4 339V425 M1250.3 339V425 M1261.1 339V425\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1342\" y=\"242\" width=\"109\" height=\"93\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1386.5 285.5l10 -10l10 10ZM1386.5 291.5l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"54.5\" y=\"289.5\" dominant-baseline=\"central\"><tspan x=\"54.5\" dy=\"0\">A22</tspan></text>\n<text x=\"397\" y=\"290\" dominant-baseline=\"central\"><tspan x=\"397\" dy=\"0\">A20</tspan></text>\n<text x=\"507\" y=\"290\" dominant-baseline=\"central\"><tspan x=\"507\" dy=\"0\">A18</tspan></text>\n<text x=\"632.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"632.5\" dy=\"0\">A16</tspan></text>\n<text x=\"713\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"713\" dy=\"0\">A14</tspan></text>\n<text x=\"794\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"794\" dy=\"0\">A12</tspan></text>\n<text x=\"874.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"874.5\" dy=\"0\">A10</tspan></text>\n<text x=\"954.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"954.5\" dy=\"0\">A8</tspan></text>\n<text x=\"1035\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1035\" dy=\"0\">A6</tspan></text>\n<text x=\"1115.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1115.5\" dy=\"0\">A4</tspan></text>\n<text x=\"1175.5\" y=\"292\" dominant-baseline=\"central\"><tspan x=\"1175.5\" dy=\"0\">A2</tspan></text>\n<text x=\"54\" y=\"367\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A24</tspan></text>\n<text x=\"54\" y=\"439.5\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A26</tspan></text>\n<text x=\"54\" y=\"515\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A28</tspan></text>\n<text x=\"54\" y=\"590.5\" dominant-baseline=\"central\"><tspan x=\"54\" dy=\"0\">A30</tspan></text>\n<text x=\"351\" y=\"466\" dominant-baseline=\"central\"><tspan x=\"351\" dy=\"0\">A19</tspan></text>\n<text x=\"502\" y=\"466\" dominant-baseline=\"central\"><tspan x=\"502\" dy=\"0\">A17</tspan></text>\n<text x=\"705\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"705\" dy=\"0\">A15</tspan></text>\n<text x=\"793\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"793\" dy=\"0\">A13</tspan></text>\n<text x=\"875\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"875\" dy=\"0\">A9</tspan></text>\n<text x=\"955\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"955\" dy=\"0\">A7</tspan></text>\n<text x=\"1035\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"1035\" dy=\"0\">A5</tspan></text>\n<text x=\"1135\" y=\"478\" dominant-baseline=\"central\"><tspan x=\"1135\" dy=\"0\">A1/3</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M207 332H224M266 332H283\"/>\n<path class=\"door\" d=\"M224 332V290\"/><path class=\"swing\" d=\"M266 332A42 42 0 0 0 224 290\"/>\n<path class=\"wall\" d=\"M1195 336V351M1195 393V409\"/>\n<path class=\"door\" d=\"M1195 351H1153\"/><path class=\"swing\" d=\"M1195 393A42 42 0 0 1 1153 351\"/>\n</g></g>\n</svg>\n", "B": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor B</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-B\">\n<polygon class=\"shell\" points=\"4,238 1456,238 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 264,547 264,637 4,637\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"246\" width=\"82\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"96\" y=\"246\" width=\"32\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"279\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"246\" width=\"74\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"429\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"504\" y=\"246\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"580\" y=\"246\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"328\" width=\"82\" height=\"65\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"394\" width=\"82\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"469\" width=\"82\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"542\" width=\"82\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"157\" y=\"395\" width=\"81\" height=\"219\" rx=\"2\"/>\n<rect class=\"room\" x=\"240\" y=\"395\" width=\"337\" height=\"125\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"130\" y=\"246\" width=\"74\" height=\"76\" rx=\"2\"/>\n<path class=\"tread\" d=\"M140.6 248V320 M151.1 248V320 M161.7 248V320 M172.3 248V320 M182.9 248V320 M193.4 248V320\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"53\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B14</tspan></text>\n<text x=\"315.5\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"315.5\" dy=\"0\">B12</tspan></text>\n<text x=\"391\" y=\"286\" dominant-baseline=\"central\"><tspan x=\"391\" dy=\"0\">B12A</tspan></text>\n<text x=\"53\" y=\"360.5\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B16</tspan></text>\n<text x=\"53\" y=\"430\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B18</tspan></text>\n<text x=\"53\" y=\"504.5\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B20</tspan></text>\n<text x=\"53\" y=\"578\" dominant-baseline=\"central\"><tspan x=\"53\" dy=\"0\">B22</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M204 326H220M262 326H279\"/>\n<path class=\"door\" d=\"M220 326V284\"/><path class=\"swing\" d=\"M262 326A42 42 0 0 0 220 284\"/>\n<path d=\"M1188 357V399\" stroke=\"#C3E2F6\" stroke-width=\"4\"/>\n<path class=\"wall\" d=\"M1189 333V357M1189 399V424\"/>\n<path class=\"door\" d=\"M1189 357H1147\"/><path class=\"swing\" d=\"M1189 399A42 42 0 0 1 1147 357\"/>\n</g></g>\n</svg>\n", "C": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor C</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-C\">\n<polygon class=\"shell\" points=\"4,238 1456,238 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 264,547 264,638 4,638\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"248\" width=\"80\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"95\" y=\"248\" width=\"31\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"278\" y=\"248\" width=\"74\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"248\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"429\" y=\"248\" width=\"73\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"504\" y=\"248\" width=\"72\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"580\" y=\"248\" width=\"71\" height=\"80\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"330\" width=\"80\" height=\"65\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"398\" width=\"80\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"472\" width=\"80\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"546\" width=\"80\" height=\"71\" rx=\"2\"/>\n<rect class=\"room\" x=\"156\" y=\"398\" width=\"80\" height=\"219\" rx=\"2\"/>\n<rect class=\"room\" x=\"239\" y=\"398\" width=\"337\" height=\"124\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"248\" width=\"75\" height=\"77\" rx=\"2\"/>\n<path class=\"tread\" d=\"M138.7 250V323 M149.4 250V323 M160.1 250V323 M170.9 250V323 M181.6 250V323 M192.3 250V323\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"52\" y=\"288\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C14</tspan></text>\n<text x=\"52\" y=\"362.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C16</tspan></text>\n<text x=\"52\" y=\"433.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C18</tspan></text>\n<text x=\"52\" y=\"508\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C20</tspan></text>\n<text x=\"52\" y=\"581.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">C22</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M203 328H219M261 328H278\"/>\n<path class=\"door\" d=\"M219 328V286\"/><path class=\"swing\" d=\"M261 328A42 42 0 0 0 219 286\"/>\n<path d=\"M1188 357V399\" stroke=\"#C3E2F6\" stroke-width=\"4\"/>\n<path class=\"wall\" d=\"M1189 333V357M1189 399V424\"/>\n<path class=\"door\" d=\"M1189 357H1147\"/><path class=\"swing\" d=\"M1189 399A42 42 0 0 1 1147 357\"/>\n</g></g>\n</svg>\n", "D": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor D</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-D\">\n<polygon class=\"shell\" points=\"4,240 1456,240 1456,432 1274,432 1274,426 1190,426 1190,546 656,546 656,576 576,576 576,547 262,547 262,642 4,642\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"12\" y=\"250\" width=\"80\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"95\" y=\"250\" width=\"31\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"278\" y=\"250\" width=\"74\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"354\" y=\"250\" width=\"72\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"428\" y=\"250\" width=\"148\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"579\" y=\"250\" width=\"73\" height=\"86\" rx=\"2\"/>\n<rect class=\"room\" x=\"658\" y=\"238\" width=\"530\" height=\"307\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"338\" width=\"80\" height=\"68\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"408\" width=\"80\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"485\" width=\"80\" height=\"75\" rx=\"2\"/>\n<rect class=\"room\" x=\"12\" y=\"562\" width=\"80\" height=\"76\" rx=\"2\"/>\n<rect class=\"room\" x=\"156\" y=\"408\" width=\"80\" height=\"229\" rx=\"2\"/>\n<rect class=\"room\" x=\"238\" y=\"408\" width=\"149\" height=\"22\" rx=\"2\"/>\n<rect class=\"room\" x=\"238\" y=\"431\" width=\"60\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"300\" y=\"431\" width=\"29\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"331\" y=\"431\" width=\"55\" height=\"107\" rx=\"2\"/>\n<rect class=\"room\" x=\"388\" y=\"408\" width=\"188\" height=\"130\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"250\" width=\"75\" height=\"80\" rx=\"2\"/>\n<path class=\"tread\" d=\"M138.7 252V328 M149.4 252V328 M160.1 252V328 M170.9 252V328 M181.6 252V328 M192.3 252V328\"/>\n<rect class=\"stair\" x=\"1190\" y=\"333\" width=\"82\" height=\"91\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 335V422 M1213.4 335V422 M1225.1 335V422 M1236.9 335V422 M1248.6 335V422 M1260.3 335V422\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"52\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D14</tspan></text>\n<text x=\"315\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"315\" dy=\"0\">D12</tspan></text>\n<text x=\"390\" y=\"293\" dominant-baseline=\"central\"><tspan x=\"390\" dy=\"0\">D11</tspan></text>\n<text x=\"52\" y=\"372\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D16</tspan></text>\n<text x=\"52\" y=\"445.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D18</tspan></text>\n<text x=\"52\" y=\"522.5\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D20</tspan></text>\n<text x=\"52\" y=\"600\" dominant-baseline=\"central\"><tspan x=\"52\" dy=\"0\">D22</tspan></text>\n<text x=\"268\" y=\"484.5\" dominant-baseline=\"central\"><tspan x=\"268\" dy=\"0\">D17A</tspan></text>\n<text x=\"358.5\" y=\"484.5\" dominant-baseline=\"central\"><tspan x=\"358.5\" dy=\"0\">D17</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M203 336H219M261 336H278\"/>\n<path class=\"door\" d=\"M219 336V294\"/><path class=\"swing\" d=\"M261 336A42 42 0 0 0 219 294\"/>\n<path d=\"M1188 357V399\" stroke=\"#C3E2F6\" stroke-width=\"4\"/>\n<path class=\"wall\" d=\"M1189 333V357M1189 399V424\"/>\n<path class=\"door\" d=\"M1189 357H1147\"/><path class=\"swing\" d=\"M1189 399A42 42 0 0 1 1147 357\"/>\n</g></g>\n</svg>\n", "E": "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 228 1460 424\" width=\"1460\" height=\"424\">\n<title>Floor E</title>\n<style>\n.shell{fill:#EAF4FB;stroke:#6FA3CC;stroke-width:2;stroke-linejoin:round}\n.room{fill:#C3E2F6;stroke:#7DB2DA;stroke-width:1.2}\n.stair{fill:#DDEFFB;stroke:#7DB2DA;stroke-width:1.2}\n.tread{fill:none;stroke:#7DB2DA;stroke-width:1.2}\n.lift{fill:#93C6E8;stroke:#5D97C6;stroke-width:1.5}\n.liftmark{fill:#FFFFFF;opacity:.9}\ntext{font-family:\"Helvetica Neue\",Helvetica,Arial,sans-serif;font-size:13px;font-weight:600;fill:#1E4A72;text-anchor:middle}\n.wall{fill:none;stroke:#2E5E8C;stroke-width:4;stroke-linecap:round}\n.door{fill:none;stroke:#2E5E8C;stroke-width:3;stroke-linecap:round}\n.swing{fill:none;stroke:#2E5E8C;stroke-width:1.2;stroke-dasharray:3 3}\n.area{font-size:28px;font-weight:400;fill:#7DB2DA;letter-spacing:1px}\n</style>\n<g id=\"floor-E\">\n<polygon class=\"shell\" points=\"6,244 1176,244 1176,240 1456,240 1456,436 1272,436 1272,430 1176,430 1176,548 656,548 656,576 576,576 576,548 6,548\"/>\n<g class=\"rooms\">\n<rect class=\"room\" x=\"10\" y=\"256\" width=\"74\" height=\"78\" rx=\"2\"/>\n<rect class=\"room\" x=\"281\" y=\"256\" width=\"75\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"358\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"434\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"510\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"588\" y=\"256\" width=\"73\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"664\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"740\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"816\" y=\"256\" width=\"116\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"935\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"1012\" y=\"256\" width=\"74\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"1088\" y=\"256\" width=\"86\" height=\"84\" rx=\"2\"/>\n<rect class=\"room\" x=\"10\" y=\"336\" width=\"74\" height=\"72\" rx=\"2\"/>\n<rect class=\"room\" x=\"10\" y=\"411\" width=\"228\" height=\"128\" rx=\"2\"/>\n<rect class=\"room\" x=\"282\" y=\"408\" width=\"82\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"366\" y=\"410\" width=\"210\" height=\"134\" rx=\"2\"/>\n<rect class=\"room\" x=\"656\" y=\"408\" width=\"82\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"740\" y=\"408\" width=\"74\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"816\" y=\"408\" width=\"270\" height=\"132\" rx=\"2\"/>\n<rect class=\"room\" x=\"1088\" y=\"408\" width=\"86\" height=\"132\" rx=\"2\"/>\n</g><g class=\"stairs\">\n<rect class=\"stair\" x=\"128\" y=\"256\" width=\"77\" height=\"79\" rx=\"2\"/>\n<path class=\"tread\" d=\"M139.0 258V333 M150.0 258V333 M161.0 258V333 M172.0 258V333 M183.0 258V333 M194.0 258V333\"/>\n<rect class=\"stair\" x=\"1190\" y=\"337\" width=\"82\" height=\"93\" rx=\"2\"/>\n<path class=\"tread\" d=\"M1201.7 339V428 M1213.4 339V428 M1225.1 339V428 M1236.9 339V428 M1248.6 339V428 M1260.3 339V428\"/>\n</g><g class=\"lifts\">\n<rect class=\"lift\" x=\"580\" y=\"506\" width=\"74\" height=\"68\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M607.0 537.0l10 -10l10 10ZM607.0 543.0l10 10l10 -10Z\"/>\n<rect class=\"lift\" x=\"1343\" y=\"242\" width=\"111\" height=\"94\" rx=\"3\"/>\n<path class=\"liftmark\" d=\"M1388.5 286.0l10 -10l10 10ZM1388.5 292.0l10 10l10 -10Z\"/>\n</g><g class=\"labels\">\n<text x=\"318.5\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"318.5\" dy=\"0\">E20</tspan></text>\n<text x=\"395\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"395\" dy=\"0\">E18</tspan></text>\n<text x=\"471\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"471\" dy=\"0\">E16</tspan></text>\n<text x=\"547\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"547\" dy=\"0\">E14</tspan></text>\n<text x=\"624.5\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"624.5\" dy=\"0\">E14</tspan></text>\n<text x=\"701\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"701\" dy=\"0\">E14</tspan></text>\n<text x=\"777\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"777\" dy=\"0\">E10</tspan></text>\n<text x=\"874\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"874\" dy=\"0\">E8</tspan></text>\n<text x=\"972\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"972\" dy=\"0\">E6</tspan></text>\n<text x=\"1049\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"1049\" dy=\"0\">E4</tspan></text>\n<text x=\"1131\" y=\"298\" dominant-baseline=\"central\"><tspan x=\"1131\" dy=\"0\">E2</tspan></text>\n<text x=\"47\" y=\"372\" dominant-baseline=\"central\"><tspan x=\"47\" dy=\"0\">QDT</tspan></text>\n<text x=\"323\" y=\"474\" dominant-baseline=\"central\"><tspan x=\"323\" dy=\"0\">E15</tspan></text>\n<text x=\"951\" y=\"474\" dominant-baseline=\"central\"><tspan x=\"951\" dy=\"0\">E3/E7</tspan></text>\n<text x=\"1131\" y=\"474\" dominant-baseline=\"central\"><tspan x=\"1131\" dy=\"0\">E1</tspan></text>\n</g><g class=\"walls\">\n<path class=\"wall\" d=\"M205 338H222M264 338H281\"/>\n<path class=\"door\" d=\"M222 338V296\"/><path class=\"swing\" d=\"M264 338A42 42 0 0 0 222 296\"/>\n<path class=\"wall\" d=\"M1176 244V352M1176 394V548\"/>\n<path class=\"door\" d=\"M1176 352H1134\"/><path class=\"swing\" d=\"M1176 394A42 42 0 0 1 1134 352\"/>\n</g></g>\n</svg>\n"};
 const PHYSICS_BOUNDS = { x:0, y:228, w:1460, h:424 };
 const DEFAULT_BOUNDS = { x:0, y:0, w:1456, h:820 };
 const M_PER_UNIT = 0.05; // rough scale: one map unit ≈ 5 cm
@@ -471,6 +479,15 @@ const curBounds = () => floorById(ui.floor)?.bounds ?? DEFAULT_BOUNDS;
 // default view leaves room for the floor buttons on the left and the toolbar on top
 const fitFor = b => ({ x:b.x - b.w*0.095, y:b.y - b.h*0.17, w:b.w*1.11, h:b.h*1.27 });
 
+const PHYSICS_UNNAMED = [['E',10,256,84,334],['E',510,256,584,340],['E',664,256,738,340],['E',10,411,238,539],['E',366,410,576,544],['E',656,408,738,540],['E',740,408,814,540],['D',95,250,126,336],['D',428,250,576,336],['D',579,250,652,336],['D',658,238,1188,545],['D',156,408,236,637],['D',238,408,387,430],['D',300,431,329,538],['D',388,408,576,538],['C',95,248,126,328],['C',278,248,352,328],['C',354,248,426,328],['C',429,248,502,328],['C',504,248,576,328],['C',580,248,651,328],['C',658,238,1188,545],['C',156,398,236,617],['C',239,398,576,522],['B',96,246,128,326],['B',429,246,502,326],['B',504,246,577,326],['B',580,246,652,326],['B',658,238,1188,545],['B',157,395,238,614],['B',240,395,577,520],['A',98,248,130,332],['A',283,248,358,332],['A',160,402,241,627],['A',243,402,274,530]]; // rooms drawn on the maps without a name
+/* Names for the rooms that had none on the maps (numbered to fit their neighbours); each is in route-node-map.json. */
+const PHYSICS_ROOM_NUMBERS = {"r-E-u1": "E22", "r-E-u2": "E14A", "r-E-u3": "E14B", "r-E-u4": "E17", "r-E-u5": "E13", "r-E-u6": "E11", "r-E-u7": "E9", "r-D-u1": "D14A", "r-D-u2": "D10", "r-D-u3": "D9", "r-D-u4": "D1", "r-D-u5": "D19", "r-D-u6": "D17C", "r-D-u7": "D17B", "r-D-u8": "D15", "r-C-u1": "C14A", "r-C-u2": "C12", "r-C-u3": "C11", "r-C-u4": "C10", "r-C-u5": "C9", "r-C-u6": "C8", "r-C-u7": "C1", "r-C-u8": "C19", "r-C-u9": "C17", "r-B-u1": "B14A", "r-B-u2": "B11", "r-B-u3": "B10", "r-B-u4": "B9", "r-B-u5": "B1", "r-B-u6": "B19", "r-B-u7": "B17", "r-A-u1": "A22A", "r-A-u2": "A20A", "r-A-u3": "A23", "r-A-u4": "A21"};
+/* Keycard-access icons, placed on the stair doors drawn on the maps (display only; the backend decides access). */
+const KEYCARD_DOORS = [
+  ...['A','B','C','D','E'].map(f => ({ id:`m-keydoor-east-${f}`, floor:f, x:{A:1195,B:1189,C:1189,D:1189,E:1176}[f], y:{A:372,B:378,C:378,D:378,E:373}[f],
+    detail:'This door to the east stairs opens with a UCL keycard. Visitors need to be let through.' })),
+  { id:'m-keydoor-west-E', floor:'E', x:243, y:338, detail:'This door to the west stairs opens with a UCL keycard. Visitors need to be let through.' },
+];
 /* Physics walkways (corridor centre-lines) per floor: [x1,y1,x2,y2]. */
 const PHYSICS_CORRIDORS = {
   A:[[126,370,1195,370],[126,370,126,610],[616,370,616,500],[1195,370,1230,292],[1230,292,1330,292]],
@@ -499,6 +516,35 @@ const AMENITY_TYPES = {
   other:      { label:'Other',             plural:'other facilities',   icon:'i-star',      color:'#5E6A82', words:['other'] },
 };
 
+const ISSUE_TYPES = {
+  broken:      { label:'Broken or not working' },
+  leak:        { label:'Leak or spill' },
+  door:        { label:'Door won’t open or close' },
+  blocked:     { label:'Path blocked' },
+  lift:        { label:'Lift or stairs problem' },
+  cleaning:    { label:'Dirty or needs cleaning' },
+  temperature: { label:'Too hot or too cold' },
+  noise:       { label:'Too noisy' },
+  crowded:     { label:'Too busy or full' },
+  safety:      { label:'Safety hazard' },
+  access:      { label:'Accessibility problem' },
+  other:       { label:'Something else' },
+};
+const defaultIssueTypes = () => Object.entries(ISSUE_TYPES).map(([id,t]) => ({ id, label:t.label }));
+const issueType = m => data.issueTypes?.find(t => t.id===m.category)?.label ?? m.categoryLabel ?? ISSUE_TYPES[m.category]?.label ?? 'Problem';
+// Students only see the problem type; the written description is for admins.
+const isAdmin = () => ui.role==='admin';
+const markerText = m => m.kind==='issue' && !isAdmin() ? issueType(m) : m.title;
+const markerDetail = m => m.kind==='issue' && !isAdmin() ? '' : (m.detail || '');
+/* Room tags that describe a facility; they stay only while that facility is in the room. */
+const FACILITY_TAGS = { printing:'printer', printer:'printer', charging:'charging', microwave:'microwave', kitchen:'microwave', cafe:'cafe', quiet:'study', study:'study', water:'water', toilet:'bathroom', toilets:'bathroom', bathroom:'bathroom' };
+const inRoom = (a, r) => a.floor===r.floor && a.x>=r.rect[0] && a.x<=r.rect[2] && a.y>=r.rect[1] && a.y<=r.rect[3];
+function cleanFacilityTags(b, rooms = b.rooms, onlyType = null){
+  for (const r of rooms) r.tags = (r.tags||[]).filter(t => {
+    const ty = FACILITY_TAGS[norm(t)]; if (!ty || (onlyType && ty!==onlyType)) return true;
+    return b.amenities.some(a => (a.type===ty || (ty==='bathroom' && a.type==='accessible')) && inRoom(a, r));
+  });
+}
 const MARKER_KINDS = {
   issue:   { label:'Reported problem',  icon:'i-flag',   color:'#C8102E' },
   closure: { label:'Closed / out of order', icon:'i-closed', color:'#C8102E' },
@@ -554,6 +600,8 @@ function seedPhysics(){
     R('E','QDT',10,336,84,408), R('E','E15',282,408,364,540,['post','finance','safety'],['Post, Finance and Safety office.']),
     R('E','E3/E7',816,408,1086,540,['cafe','charging'],['Busy at lunchtime.']), R('E','E1',1088,408,1174,540),
   ];
+  const ucount = {};
+  for (const [f,x1,y1,x2,y2] of PHYSICS_UNNAMED){ ucount[f] = (ucount[f]||0) + 1; rooms.push({ id:`r-${f}-u${ucount[f]}`, name:'', floor:f, rect:[x1,y1,x2,y2], tags:[], notes:[], printed:true }); }
   let n = 0;
   const A = (type,floor,x,y,name='',tags=[],notes=[]) => ({ id:`a-${floor}-${type}-${++n}`, type, floor, x, y, name, tags, notes });
   const amenities = [
@@ -587,13 +635,9 @@ function seedPhysics(){
   }
   const now = new Date();
   const markers = [];
-  const doorMarker = (tid, title, detail) => markers.push({ id:'m-access-'+tid, kind:'access', status:'active', targetKind:'transition', targetId:tid,
-    title, detail, allowed:['student','postgrad','staff'], windowCards:[], by:'admin' });
+  for (const d of KEYCARD_DOORS) markers.push({ id:d.id, kind:'access', status:'active', floor:d.floor, x:d.x, y:d.y,
+    title:'Keycard access', detail:d.detail, allowed:['student','postgrad','staff'], windowCards:[], by:'admin' });
   for (const f of floors){
-    for (const g of ['SL','SR']){
-      if (f.id==='E') doorMarker(`t-${g}-E`, 'Card access', 'Stair door opens with a UCL card. Visitors need to be let through.');
-      else doorMarker(`t-${g}-${f.id}`, 'Tap access', 'Tap a UCL card to open this stair door.');
-    }
     markers.push({ id:`m-lift-${f.id}`, kind:'closure', status:'active', targetKind:'transition', targetId:`t-LM-${f.id}`,
       title:'Out of service for maintenance', detail:'The central lift is broken. Use another lift or the stairs.', by:'admin' });
   }
@@ -606,12 +650,12 @@ function seedPhysics(){
 
 function newBuilding(name, n){
   const floors = Array.from({ length:n }, (_, i) => ({ id:uid('f'), name: i===0 ? 'Ground floor' : `Floor ${i}`, short: i===0 ? 'G' : String(i), level:i, img:null, bounds:{ ...DEFAULT_BOUNDS } }));
-  return { id:uid('b'), name, floors, walkways:[], rooms:[], amenities:[], groups:{}, transitions:[], markers:[], suggestions:[] };
+  return { id:uid('b'), name, floors, walkways:[], rooms:[], amenities:[], groups:{}, transitions:[], markers:[], suggestions:[], issueTypes:defaultIssueTypes() };
 }
 
 function autoName(a, rooms){
   const t = AMENITY_TYPES[a.type]?.label ?? a.type;
-  const sameFloor = rooms.filter(r => r.floor === a.floor);
+  const sameFloor = rooms.filter(r => r.floor === a.floor && r.name);
   const inside = sameFloor.find(r => a.x>=r.rect[0] && a.x<=r.rect[2] && a.y>=r.rect[1] && a.y<=r.rect[3]);
   if (inside) return `${t} in ${inside.name}`;
   let best=null, bd=Infinity;
@@ -621,7 +665,7 @@ function autoName(a, rooms){
 
 /* ---------------- persistence (browser only) ---------------- */
 const STORE_KEY = 'ucl-wayfinder-v3';
-function seedStore(){ const b = seedPhysics(); return { version:3, flipped:true, eWall:true, eWall2:true, demo2:true, noLabelA:true, moveWC:true, fixC:true, active:b.id, projects:{ [b.id]:b } }; }
+function seedStore(){ const b = seedPhysics(); return { version:3, flipped:true, eWall:true, eWall2:true, demo2:true, noLabelA:true, moveWC:true, fixC:true, unnamed1:true, imgs2:true, imgs3:true, active:b.id, projects:{ [b.id]:b } }; }
 function loadStore(){ try { const s = localStorage.getItem(STORE_KEY); if (s){ const d = JSON.parse(s); if (d && d.version===3 && d.projects && d.projects[d.active]) return d; } } catch(e){} return null; }
 let saveWarned = false;
 function saveData(){
@@ -686,6 +730,80 @@ if (!store.fixC){ // Floor C: accessible toilet next to the normal one, extra to
   }
   store.fixC = true;
 }
+if (!store.unnamed1){ // rooms on the maps that had no name can now be clicked and named
+  const ph = store.projects.physics;
+  if (ph){ const have = new Set(ph.rooms.map(r => r.id)); for (const r of seedPhysics().rooms) if (!r.name && !have.has(r.id)) ph.rooms.push(r); }
+  store.unnamed1 = true;
+}
+if (!store.imgs2){ // latest floor plan images for the Physics building
+  const ph = store.projects.physics;
+  if (ph) for (const f of ph.floors) if (PHYSICS_SVG[f.id]) f.img = svgUri(PHYSICS_SVG[f.id]);
+  store.imgs2 = true;
+}
+if (!store.imgs3){ // Floor E map with the E1, E14 and E15 descriptions
+  const fe = store.projects.physics?.floors.find(f => f.id==='E'); if (fe) fe.img = svgUri(PHYSICS_SVG.E);
+  store.imgs3 = true;
+}
+if (!store.tags1){ // remove facility tags from rooms whose facility is gone (e.g. #printing in E4)
+  for (const b of Object.values(store.projects)) cleanFacilityTags(b);
+  store.tags1 = true;
+}
+if (!store.occ1){ // demo office labels (made-up names). Shown on the map only; room names and routing are unchanged.
+  const ph = store.projects.physics;
+  if (ph){
+    const byName = { E20:'Dr A. Sample', E16:'Dr B. Example', E8:'Dr E. Test', E6:'Dr F. Mock', E4:'G. Sample and H. Example', E2:'Dr J. Demo' };
+    const byLeft = { 510:'Prof. C. Demo', 664:'Prof. D. Placeholder' };  // the two E14 offices either side of the middle one
+    for (const r of ph.rooms) if (r.floor==='E' && r.occupant===undefined){
+      const o = byName[r.name] || (!r.name ? byLeft[r.rect[0]] : undefined); if (o) r.occupant = o;
+    }
+  }
+  store.occ1 = true;
+}
+if (!store.label1){ // rooms named on the map before display names existed
+  for (const b of Object.values(store.projects)) for (const r of b.rooms) if (r.showLabel && r.name && !r.label) r.label = r.name;
+  store.label1 = true;
+}
+if (!store.imgs4){ // E1 and E15 descriptions moved from the map image into office labels
+  const ph = store.projects.physics;
+  if (ph){
+    const fe = ph.floors.find(f => f.id==='E'); if (fe) fe.img = svgUri(PHYSICS_SVG.E);
+    const set = { E1:'Education Support Team', E15:'Post, Finance and Safety Office' };
+    for (const r of ph.rooms) if (r.floor==='E' && set[r.name] && !r.occupant) r.occupant = set[r.name];
+  }
+  store.imgs4 = true;
+}
+if (!store.keydoors1){ // keycard icons moved from the stairs onto the doors; none on the west stairs of A–D
+  const ph = store.projects.physics;
+  if (ph){
+    ph.markers = ph.markers.filter(m => !/^m-access-t-S[LR]-/.test(m.id) && !/^m-keydoor-/.test(m.id));
+    for (const d of KEYCARD_DOORS) ph.markers.push({ id:d.id, kind:'access', status:'active', floor:d.floor, x:d.x, y:d.y,
+      title:'Keycard access', detail:d.detail, allowed:['student','postgrad','staff'], windowCards:[], by:'admin' });
+  }
+  store.keydoors1 = true;
+}
+if (!store.names1){ // every room on the Physics maps gets a name, so each can be routed to
+  const ph = store.projects.physics;
+  // label spots clear of the stairs, toilets and lab icons
+  const at = { D14A:[110,322], C14A:[110,322], B14A:[112,315], A22A:[114,318], D1:[923,355], C1:[923,355], B1:[923,355] };
+  if (ph) for (const r of ph.rooms){
+    const n = PHYSICS_ROOM_NUMBERS[r.id]; if (!n || r.name) continue;
+    r.name = n;
+    if (n==='E14A' || n==='E14B') r.label = n;   // these two have "E14" printed in the map image, so it is covered
+    else r.showLabel = true;                      // others have no printed name: just draw it
+    if (at[n]) r.labelAt = at[n];
+  }
+  store.names1 = true;
+}
+if (!store.wcroom1){ // the toilet rooms on A–D now fill only the space between the corner room and the stairs
+  const ph = store.projects.physics;
+  if (ph){
+    for (const f of ['A','B','C','D']){ const fl = ph.floors.find(x => x.id===f); if (fl) fl.img = svgUri(PHYSICS_SVG[f]); }
+    const fit = { 'r-A-u1':[[98,248,130,332],[114,318]], 'r-B-u1':[[96,246,128,326],[112,315]], 'r-C-u1':[[95,248,126,328],[110,322]], 'r-D-u1':[[95,250,126,336],[110,322]] };
+    for (const r of ph.rooms) if (fit[r.id]){ r.rect = fit[r.id][0]; if (r.labelAt) r.labelAt = fit[r.id][1]; }
+  }
+  store.wcroom1 = true;
+}
+for (const b of Object.values(store.projects)) b.issueTypes ||= defaultIssueTypes();
 let data = store.projects[store.active];   // the active building
 FLOORS = data.floors;
 
@@ -695,6 +813,40 @@ let routeCatalogPromise = null;
 let googleMapsPromise = null;
 const outdoorDemo = { origin:null, candidate:null, map:null, routePolyline:null, routeOutline:null, originMarker:null, enterOverlay:null, entranceMarkers:[], config:null };
 
+/* Rooms listed as "auto" in route-node-map.json are matched to the backend's own node for that room:
+   the node from GET /map that sits inside the room on the floor plan (using the floor's transform). */
+let autoRoomsPromise = null;
+function resolveAutoRooms(config){
+  if (!autoRoomsPromise) autoRoomsPromise = (async () => {
+    const todo = [];
+    for (const [f, rooms] of Object.entries(config.rooms || {})) for (const [name, id] of Object.entries(rooms)) if (id === 'auto') todo.push([f, name]);
+    if (!todo.length) return;
+    let nodes = [];
+    try { const res = await fetch(`${ROUTE_API_BASE}/map`); const body = await res.json(); nodes = Array.isArray(body.nodes) ? body.nodes : []; } catch(e){ autoRoomsPromise = null; return; }
+    const taken = new Set([...Object.values(config.rooms||{}).flatMap(o => Object.values(o)), ...Object.values(config.connectors||{}).flatMap(o => Object.values(o))]);
+    const posOf = n => { const x = n.x ?? n.position?.x ?? n.pos?.[0] ?? n.coords?.[0], y = n.y ?? n.position?.y ?? n.pos?.[1] ?? n.coords?.[1]; return Number.isFinite(+x) && Number.isFinite(+y) && x!==null && y!==null ? [+x, +y] : null; };
+    const pageOf = n => n.page ?? (+(/^p0*(\d+)_/.exec(n.id) || [])[1] || null);
+    for (const [f, name] of todo){
+      config.rooms[f][name] = null;
+      const room = data.rooms.find(r => r.floor===f && r.name===name), t = config.transforms?.[f], page = config.floorPages?.[f];
+      if (!room || !t) continue;
+      const [x1,y1,x2,y2] = room.rect, cx = (x1+x2)/2, cy = (y1+y2)/2;
+      let best = null, bd = Infinity;
+      for (const n of nodes){
+        if (pageOf(n) != page) continue;
+        const p = posOf(n); if (!p) continue;
+        const mx = t.x[0]*p[0] + t.x[1], my = t.y[0]*p[1] + t.y[1];
+        const out = Math.hypot(mx - clamp(mx,x1,x2), my - clamp(my,y1,y2));   // 0 when inside the room
+        if (out > 40 || (out > 0 && taken.has(n.id))) continue;               // never borrow a neighbouring room's node
+        const isRoom = /_room_/.test(n.id) || n.type==='room' || n.kind==='room';
+        const score = out*10 + (isRoom ? 0 : 200) + Math.hypot(mx-cx, my-cy)*0.01;
+        if (score < bd){ bd = score; best = n.id; }
+      }
+      config.rooms[f][name] = best;
+    }
+  })();
+  return autoRoomsPromise;
+}
 async function loadRouteConfig(){
   if (!routeConfigPromise){
     routeConfigPromise = fetch('./route-node-map.json')
@@ -771,6 +923,7 @@ function adaptRoute(route, config){
 const api = {
   async findRoute(req){
     const config = await loadRouteConfig();
+    await resolveAutoRooms(config);
     const catalog = await loadRouteCatalog();
     const start = routeNodeFor(req.from, config), destination = routeNodeFor(req.to, config);
     if (!start || !destination){
@@ -807,12 +960,14 @@ const api = {
   },
   async addRoom(room){ data.rooms.push(room); saveData(); return room; },
   async updateEntity(kind, id, patch){ const e = getEntity(kind,id); Object.assign(e, patch); saveData(); return e; },
-  async deleteEntity(kind, id){ const k = collectionOf(kind); data[k] = data[k].filter(e => e.id !== id);
+  async deleteEntity(kind, id){ const gone = kind==='amenity' ? data.amenities.find(a => a.id===id) : null; const k = collectionOf(kind); data[k] = data[k].filter(e => e.id !== id);
+    if (gone) cleanFacilityTags(data, data.rooms.filter(r => inRoom(gone, r)), gone.type==='accessible' ? 'bathroom' : gone.type);  // drop the room's matching tag
     data.markers = data.markers.filter(m => !(m.targetKind===kind && m.targetId===id)); saveData(); },
   async addAmenity(a){ a.name = a.name || autoName(a, data.rooms); data.amenities.push(a); saveData(); return a; },
   async addTransition(t){ data.transitions.push(t); saveData(); return t; },
   async addGroup(id, g){ data.groups[id] = g; saveData(); },
   async addWalkway(w){ data.walkways.push(w); saveData(); return w; },
+  async setIssueTypes(list){ data.issueTypes = list; saveData(); },
   // buildings and floors
   async createBuilding(b){ store.projects[b.id] = b; saveData(); return b; },
   async renameBuilding(id, name){ store.projects[id].name = name; saveData(); },
@@ -1107,10 +1262,10 @@ function entityPos(kind, e){
 }
 function entityLabel(kind, e){
   if (!e) return '';
-  if (kind==='room') return e.name;
-  if (kind==='amenity') return e.name || AMENITY_TYPES[e.type]?.label;
+  if (kind==='room') return e.label || e.name || 'Unnamed room';  // label = display name set by an admin; name = routing key
+  if (kind==='amenity') return e.label || e.name || AMENITY_TYPES[e.type]?.label;
   if (kind==='transition') return `${data.groups[e.group]?.name ?? 'Stairs/lift'} (${floorName(e.floor)})`;
-  if (kind==='marker') return e.title;
+  if (kind==='marker') return markerText(e);
   if (kind==='walkway') return 'Walkway';
   return '';
 }
@@ -1326,8 +1481,8 @@ function search(q){
     groups.push({ key:'tag:'+tg, label:`Show everything tagged #${tg}`, items, icon:'i-label' });
   }
   const items = [];
-  for (const r of data.rooms){ const nm = norm(r.name); if (nm.startsWith(n) || nm.replace(/[^a-z0-9]/g,'').startsWith(n.replace(/[^a-z0-9]/g,'')) || r.tags.some(t=>norm(t).startsWith(n))) items.push({kind:'room', id:r.id, score: nm===n ? 0 : nm.startsWith(n) ? 1 : 2}); }
-  for (const a of data.amenities){ const t = AMENITY_TYPES[a.type]; if (norm(a.name).includes(n) || t.words.some(w=>norm(w).startsWith(n))) items.push({kind:'amenity', id:a.id, score:3}); }
+  for (const r of data.rooms){ const nm = norm(r.label || r.name); if (nm.startsWith(n) || nm.replace(/[^a-z0-9]/g,'').startsWith(n.replace(/[^a-z0-9]/g,'')) || r.tags.some(t=>norm(t).startsWith(n)) || (n.length>=2 && !data.hideOccupants && norm(r.occupant).includes(n))) items.push({kind:'room', id:r.id, score: nm===n ? 0 : nm.startsWith(n) ? 1 : 2}); }
+  for (const a of data.amenities){ const t = AMENITY_TYPES[a.type]; if (norm(a.label || a.name).includes(n) || t.words.some(w=>norm(w).startsWith(n))) items.push({kind:'amenity', id:a.id, score:3}); }
   for (const t of data.transitions){ const g = data.groups[t.group]; const hay = norm((g?.name||'')+' '+(g?.kind==='lift'?'lift elevator':'stairs staircase')); if (n.length>=3 && hay.includes(n)) items.push({kind:'transition', id:t.id, score:4}); }
   items.sort((a,b) => a.score-b.score || entityLabel(a.kind,getEntity(a.kind,a.id)).localeCompare(entityLabel(b.kind,getEntity(b.kind,b.id)), 'en', {numeric:true}));
   return { groups, items: items.slice(0, 10) };
@@ -1515,11 +1670,22 @@ function renderMap(){
   for (const room of data.rooms.filter(x => x.floor===f)){
     const [x1,y1,x2,y2] = room.rect;
     const closed = isOutOfOrder('room', room.id, now);
-    r += `<rect class="room ${room.printed?'':'custom'} ${isSel('room',room.id)?'sel':''} ${closed?'closed':''}" data-kind="room" data-id="${room.id}" x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}"><title>${esc(room.name)}</title></rect>`;
-    if (!room.printed || ui.bigLabels){
-      const tall = (y2-y1) > (x2-x1)*1.4 && room.name.length > 3;
-      const cx=(x1+x2)/2, cy=(y1+y2)/2;
-      r += `<text class="rlabel" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" ${tall?`transform="rotate(-90 ${cx} ${cy})"`:''}>${esc(room.name)}</text>`;
+    if (room.printed && room.label) r += `<rect class="cover" x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}" rx="2"/>`;
+    r += `<rect class="room ${room.printed?'':(room.kind==='temporary'?'temp':'made')} ${isSel('room',room.id)?'sel':''} ${closed?'closed':''}" data-kind="room" data-id="${room.id}" x="${x1}" y="${y1}" width="${x2-x1}" height="${y2-y1}"><title>${esc(room.label || room.name || "Unnamed room")}</title></rect>`;
+    const disp = room.label || room.name;
+    if ((!room.printed || ui.bigLabels || room.showLabel || room.label) && disp){
+      const tall = !room.labelAt && disp.length*13*0.62 > (x2-x1)-10 && (y2-y1) > (x2-x1) && !(room.occupant && !data.hideOccupants);  // keep it level when an office label sits underneath
+      const [cx, cy] = room.labelAt || [(x1+x2)/2, (y1+y2)/2];  // labelAt: a clear spot when the centre is taken (stairs, icons)
+      const lc = room.printed && !room.showLabel && !room.label ? '' : (room.kind==='temporary' ? 'temp' : 'plain');
+      const fs = room.labelAt ? ((x2-x1) > 200 ? 13 : 9) : lc ? Math.max(8, Math.min(13, ((tall ? y2-y1 : x2-x1) - 8) / (disp.length*0.62))) : null;  // shrink long names to fit
+      r += `<text class="rlabel ${lc}" x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="middle" ${fs?`style="font-size:${fs.toFixed(1)}px"`:''} ${tall?`transform="rotate(-90 ${cx} ${cy})"`:''}>${esc(disp)}</text>`;
+      if (room.kind==='temporary' && !tall && (y2-y1) > 40) r += `<text class="rlabel tsub" x="${cx}" y="${cy+16}" text-anchor="middle" dominant-baseline="middle">Temporary</text>`;
+    }
+    if (room.occupant && !data.hideOccupants){  // office label: display only, never used for routing
+      const cx=(x1+x2)/2, cy=(y1+y2)/2, per = Math.max(4, Math.floor((x2-x1-8)/(10*0.56)));
+      const lines = []; for (const w of room.occupant.split(/\s+/)){ const l = lines[lines.length-1]; if (l && (l+' '+w).length <= per) lines[lines.length-1] = l+' '+w; else lines.push(w); }
+      const max = Math.max(1, Math.floor((y2-cy-8)/11));
+      lines.slice(0, max).forEach((l,i) => { r += `<text class="occ" x="${cx}" y="${cy+14+i*11}" text-anchor="middle" dominant-baseline="middle">${esc(i===max-1 && lines.length>max ? l+'…' : l)}</text>`; });
     }
   }
   $('#lyr-rooms').innerHTML = r;
@@ -1549,7 +1715,7 @@ function renderMap(){
     const p = markerPos(mk); if (!p || p.floor!==f) continue;
     const k = MARKER_KINDS[mk.kind];
     const dim = mk.kind==='event' && !eventActive(mk, now);
-    m += `<g class="ent ${isSel('marker',mk.id)?'sel':''}" data-kind="marker" data-id="${mk.id}" transform="translate(${p.x} ${p.y})" ${dim?'opacity=".55"':''}><title>${esc(mk.title)}</title><circle class="disc" r="11" fill="${k.color}"/><use href="#${k.icon}" x="-7" y="-7" width="14" height="14" color="#fff"/></g>`;
+    m += `<g class="ent ${isSel('marker',mk.id)?'sel':''}" data-kind="marker" data-id="${mk.id}" transform="translate(${p.x} ${p.y})" ${dim?'opacity=".55"':''}><title>${esc(mk.kind==='issue' ? (isAdmin() ? issueType(mk)+': '+mk.title : issueType(mk)) : mk.title)}</title><circle class="disc" r="11" fill="${k.color}"/><use href="#${k.icon}" x="-7" y="-7" width="14" height="14" color="#fff"/></g>`;
   }
   $('#lyr-marks').innerHTML = m;
 
@@ -1856,7 +2022,7 @@ function renderResults(){
     el.innerHTML = `<div class="res-head"><h2>${esc(sa.label.replace(/^Show (all |everything )?/,'').replace(/ on the map$/,'').replace(/^./,c=>c.toUpperCase()))}</h2><button class="btn small" type="button" data-clear-all>Clear</button></div>
       <p class="hint" style="margin-bottom:10px">${rows.length} across ${nf} floor${nf>1?'s':''}${sa.dist?', nearest first':'. Add a start point to sort by distance'}.</p>
       <ul class="list">${rows.map(x => `<li class="res ${x.off?'dim':''}" data-focus="${x.it.kind}:${x.it.id}">${glyphFor(x.it.kind,x.e)}
-        <span class="nm">${esc(entityLabel(x.it.kind,x.e))}<span class="meta" style="display:block">${x.d!=null && isFinite(x.d) ? `${Math.round(x.d*M_PER_UNIT)} m walk` : (sa.dist ? 'No route with your settings' : '')}${x.off?' <span class="chip red">Unavailable</span>':''}${x.issues.map(m=>` <span class="chip red">${esc(m.title)}</span>`).join('')}</span></span>
+        <span class="nm">${esc(entityLabel(x.it.kind,x.e))}<span class="meta" style="display:block">${x.d!=null && isFinite(x.d) ? `${Math.round(x.d*M_PER_UNIT)} m walk` : (sa.dist ? 'No route with your settings' : '')}${x.off?' <span class="chip red">Unavailable</span>':''}${x.issues.map(m=>` <span class="chip red">${esc(issueType(m))}${isAdmin()?': '+esc(m.title):''}</span>`).join('')}</span></span>
         <span class="fl">${esc(floorShort(x.e.floor))}</span>
         <button class="btn small" type="button" data-go="${x.it.kind}:${x.it.id}" ${x.off?'disabled':''}>Go</button></li>`).join('')}</ul>`;
     return;
@@ -1875,7 +2041,7 @@ function renderResults(){
     const m = data.markers.find(x=>x.id===r.marker);
     const to = ui.to; const e = to && to.kind!=='point' ? getEntity(to.kind,to.id) : null;
     const alt = e && to.kind==='amenity' ? `<button class="btn small" type="button" data-alt-type="${e.type}" data-exclude="${e.id}">Choose another ${esc(AMENITY_TYPES[e.type].label.toLowerCase())}</button>` : '';
-    el.innerHTML = staleNote + `<div class="notice"><p><strong>${esc(to.label)} is unavailable.</strong>${m ? ` ${esc(m.title)}${m.detail?': '+esc(m.detail):''}${m.end?` Until ${esc(fmtDT(m.end))}.`:''}` : ''}</p><div class="acts">${alt}</div></div>`;
+    el.innerHTML = staleNote + `<div class="notice"><p><strong>${esc(to.label)} is unavailable.</strong>${m ? ` ${esc(markerText(m))}${markerDetail(m)?': '+esc(markerDetail(m)):''}${m.end?` Until ${esc(fmtDT(m.end))}.`:''}` : ''}</p><div class="acts">${alt}</div></div>`;
     return;
   }
   if (r.status==='no_route'){
@@ -1890,7 +2056,7 @@ function renderResults(){
     const m = data.markers.find(mm=>mm.id===x.marker); if (!m) return '';
     const p = markerPos(m);
     const e = x.atDestination && m.targetKind==='amenity' ? getEntity('amenity', m.targetId) : null;
-    return `<div class="notice"><p><strong>${x.atDestination?'Reported at your destination':'Reported on your route'}:</strong> ${esc(m.title)} (${esc(floorName(p?.floor))}).${m.detail?' '+esc(m.detail):''}</p><div class="acts">
+    return `<div class="notice"><p><strong>${x.atDestination?'Reported at your destination':'Reported on your route'}:</strong> <span class="chip red">${esc(issueType(m))}</span>${isAdmin()?' '+esc(m.title):''} (${esc(floorName(p?.floor))}).${markerDetail(m)?' '+esc(markerDetail(m)):''}</p><div class="acts">
       ${e ? `<button class="btn small" type="button" data-alt-type="${e.type}" data-exclude="${e.id}">Choose another ${esc(AMENITY_TYPES[e.type].label.toLowerCase())}</button>` : `<button class="btn small" type="button" data-avoid="${m.id}">Avoid it</button>`}
       <button class="btn small" type="button" data-keep="${m.id}">Keep this route</button>
       <button class="btn small" type="button" data-show-marker="${m.id}">Show on map</button></div></div>`;
@@ -2049,7 +2215,7 @@ function renderAdmin(){
   const issues = data.markers.filter(m=>m.status==='active' && m.kind==='issue');
   const other = data.markers.filter(m=>m.status==='active' && m.kind!=='issue');
   const target = s => { const e = getEntity(s.targetKind, s.targetId); return e ? `${entityLabel(s.targetKind,e)} (${floorName(e.floor)})` : 'Deleted item'; };
-  const mrow = m => { const p = markerPos(m); return `<li class="adm-item"><p><strong>${esc(m.title)}</strong><br><span class="hint">${esc(MARKER_KINDS[m.kind].label)}, ${esc(m.targetKind ? target(m) : floorName(p?.floor))}${m.kind==='event'?`, ${esc(fmtDT(m.start))} to ${esc(fmtDT(m.end))}`:''}</span></p><div class="acts"><button class="btn small" type="button" data-show-marker="${m.id}">Show</button><button class="btn small" type="button" data-resolve="${m.id}">${m.kind==='issue'?'Mark fixed':'Remove'}</button></div></li>`; };
+  const mrow = m => { const p = markerPos(m); return `<li class="adm-item"><p><strong>${esc(m.title)}</strong><br><span class="hint">${esc(m.kind==='issue' ? issueType(m) : MARKER_KINDS[m.kind].label)}, ${esc(m.targetKind ? target(m) : floorName(p?.floor))}${m.kind==='event'?`, ${esc(fmtDT(m.start))} to ${esc(fmtDT(m.end))}`:''}</span></p><div class="acts"><button class="btn small" type="button" data-show-marker="${m.id}">Show</button><button class="btn small" type="button" data-resolve="${m.id}">${m.kind==='issue'?'Mark fixed':'Remove'}</button></div></li>`; };
   const floorsTop = [...sortedFloors()].reverse(), nBld = Object.keys(store.projects).length;
   const wc = id => data.walkways.filter(w => w.floor===id).length;
   el.innerHTML = `<h2>Admin</h2>
@@ -2067,6 +2233,14 @@ function renderAdmin(){
         <button class="btn small" type="button" data-floor-edit="${f.id}">Rename</button>
         ${data.floors.length>1?`<button class="btn small danger" type="button" data-floor-del="${f.id}">Delete</button>`:''}</div></div></li>`).join('')}</ul>
     <button class="btn small" type="button" data-add-floor style="margin-top:8px">${icon('i-plus',14)} Add floor</button>
+    <div class="adm-sub">Office labels</div>
+    <p class="hint" style="margin-bottom:8px">Names shown under room numbers. Edit or remove one from its room’s details; they never change room names or routing.</p>
+    <label class="row" style="display:flex;gap:10px;align-items:center;font-size:14px;cursor:pointer"><input type="checkbox" class="switch" data-hide-occ ${data.hideOccupants?'checked':''}> Hide all office labels</label>
+    <div class="adm-sub">Problem categories (${data.issueTypes.length})</div>
+    <p class="hint" style="margin-bottom:8px">Students choose one of these when they report a problem. They see only the category; descriptions are for admins.</p>
+    <ul class="list">${data.issueTypes.map(t => `<li class="adm-item" style="display:flex;align-items:center;gap:8px;padding:6px 8px"><span style="flex:1">${esc(t.label)}</span>
+      <button class="btn small" type="button" data-cat-edit="${t.id}">Rename</button>${data.issueTypes.length>1?`<button class="btn small danger" type="button" data-cat-del="${t.id}">Delete</button>`:''}</li>`).join('')}</ul>
+    <button class="btn small" type="button" data-cat-add style="margin-top:8px">${icon('i-plus',14)} Add category</button>
     <div class="adm-sub">Suggestions awaiting approval (${pend.length})</div>
     ${pend.length ? `<ul class="list">${pend.map(s => `<li class="adm-item"><p>“${esc(s.text)}”${s.tag?` <span class="chip tag">#${esc(s.tag)}</span>`:''}<br><span class="hint">For ${esc(target(s))}</span></p><div class="acts"><button class="btn small primary" type="button" data-approve="${s.id}">Approve</button><button class="btn small" type="button" data-reject="${s.id}">Reject</button></div></li>`).join('')}</ul>` : `<p class="hint">Nothing waiting.</p>`}
     <div class="adm-sub">Reported problems (${issues.length})</div>
@@ -2075,7 +2249,7 @@ function renderAdmin(){
     ${other.length ? `<ul class="list">${other.map(mrow).join('')}</ul>` : `<p class="hint">Everything is open.</p>`}
     <div class="adm-sub">Map data</div>
     <p class="hint" style="margin-bottom:8px">Changes are saved in this browser. Export this building’s JSON to hand to the backend team.</p>
-    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" type="button" data-export>Export building</button><button class="btn small" type="button" data-import>Import building</button><button class="btn small danger" type="button" data-reset>Reset everything</button></div>`;
+    <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn small" type="button" data-export>Export building</button><button class="btn small" type="button" data-route-nodes>Room route nodes</button><button class="btn small" type="button" data-import>Import building</button><button class="btn small danger" type="button" data-reset>Reset everything</button></div>`;
 }
 
 /* ---------------- details card ---------------- */
@@ -2094,8 +2268,10 @@ function renderCard(){
   let sub = floorName(e.floor), body = '';
   if (s.kind==='marker'){
     const k = MARKER_KINDS[e.kind]; const p = markerPos(e);
-    sub = `${k.label}, ${floorName(p?.floor)}`;
-    body += e.detail ? `<p style="margin:0">${esc(e.detail)}</p>` : '';
+    sub = `${e.kind==='issue' ? 'Reported problem' : k.label}, ${floorName(p?.floor)}`;
+    if (e.kind==='issue') body += `<p style="margin:0 0 6px"><span class="chip red">${esc(issueType(e))}</span></p>`;
+    body += markerDetail(e) ? `<p style="margin:0">${esc(markerDetail(e))}</p>` : '';
+    if (e.kind==='issue' && !admin) body += `<p class="hint" style="margin:0">Only the admin team can see the description.</p>`;
     if (e.targetKind){ const t = getEntity(e.targetKind,e.targetId); if (t) body += `<div class="grp"><div class="grp-t">Attached to</div>${esc(entityLabel(e.targetKind,t))}</div>`; }
     if (e.kind==='event') body += `<div class="grp"><div class="grp-t">When</div>${esc(fmtDT(e.start))} to ${esc(fmtDT(e.end))}${eventActive(e, ui.when)?' <span class="chip red">On now</span>':''}</div>`;
     if (e.kind==='access') body += `<div class="grp"><div class="grp-t">Who can get through</div>${accessText(e)}</div>`;
@@ -2103,10 +2279,15 @@ function renderCard(){
     body += `<div class="acts">${admin?`<button class="btn small" type="button" data-resolve="${e.id}">${e.kind==='issue'?'Mark fixed':'Remove'}</button>`:''}</div>`;
   } else {
     if (s.kind==='amenity') sub = `${AMENITY_TYPES[e.type].label}, ${floorName(e.floor)}`;
+    if (s.kind==='room' && e.kind==='temporary'){ sub = `Temporary room, ${floorName(e.floor)}`; if (e.start) body += `<div class="grp"><div class="grp-t">When</div>${esc(fmtDT(e.start))} to ${esc(fmtDT(e.end))}</div>`; }
     if (s.kind==='transition'){ const g = data.groups[e.group]; sub = `${g.kind==='lift'?'Lift':'Stairs'}, ${floorName(e.floor)}`; const fl = data.transitions.filter(t=>t.group===e.group).map(t=>t.floor).sort((a,b)=>floorById(a).level-floorById(b).level); body += `<div class="grp"><div class="grp-t">Serves</div>${fl.map(f=>`<span class="fl">${esc(floorShort(f))}</span>`).join(' ')}</div>`; }
     if (closures.length) body += `<div class="grp">${closures.map(m=>`<div class="notice" style="margin:0 0 6px"><p style="margin:0"><strong>${m.kind==='event'?(eventActive(m,ui.when)?'Closed now':'Closed later'):'Out of order'}:</strong> ${esc(m.title)}${m.kind==='event'?`, ${esc(fmtDT(m.start))} to ${esc(fmtDT(m.end))}`:''}</p>${admin?`<div class="acts" style="margin-top:6px"><button class="btn small" type="button" data-resolve="${m.id}">Back in service</button></div>`:''}</div>`).join('')}</div>`;
-    if (issues.length) body += `<div class="grp"><div class="grp-t">Reported problems</div>${issues.map(m=>`<div><span class="chip red">${esc(m.title)}</span>${m.detail?` <span class="hint">${esc(m.detail)}</span>`:''}${admin?` <button class="btn small" type="button" data-resolve="${m.id}">Mark fixed</button>`:''}</div>`).join('')}</div>`;
+    if (issues.length) body += `<div class="grp"><div class="grp-t">Reported problems</div>${issues.map(m=>`<div><span class="chip red">${esc(issueType(m))}</span>${admin?' '+esc(m.title):''}${markerDetail(m)?` <span class="hint">${esc(markerDetail(m))}</span>`:''}${admin?` <button class="btn small" type="button" data-resolve="${m.id}">Mark fixed</button>`:''}</div>`).join('')}</div>`;
     if (access.length) body += `<div class="grp"><div class="grp-t">Access</div>${access.map(m=>`<div>${esc(m.detail||m.title)}</div>`).join('')}</div>`;
+    if (s.kind==='room' && ((e.occupant && !data.hideOccupants) || admin)){
+      body += `<div class="grp"><div class="grp-t">Office label</div>${e.occupant ? esc(e.occupant) + (data.hideOccupants ? ' <span class="hint">(hidden from the map)</span>' : '') : '<span class="hint">None.</span>'}
+        ${admin ? `<div class="acts" style="margin-top:6px"><button class="btn small" type="button" data-occ-edit>${e.occupant?'Edit':'Add'} office label</button>${e.occupant?'<button class="btn small danger" type="button" data-occ-del>Remove</button>':''}</div>` : ''}</div>`;
+    }
     if (s.kind!=='transition'){
       const tags = e.tags||[];
       body += `<div class="grp"><div class="grp-t">Tags</div>${tags.length?tags.map(t=>`<span class="chip tag">#${esc(t)}${admin?`<button class="tag-x" type="button" data-untag="${esc(t)}" aria-label="Remove tag ${esc(t)}">×</button>`:''}</span>`).join(''):'<span class="hint">No tags yet.</span>'}
@@ -2121,9 +2302,11 @@ function renderCard(){
       <button class="btn small" type="button" data-flag-entity>Report a problem</button>
       ${s.kind!=='transition'?'<button class="btn small" type="button" data-suggest>Suggest info</button>':''}
     </div>`;
+    if (admin && s.kind==='room' && !e.name) body = `<div class="notice info" style="margin:0 0 6px"><p style="margin:0 0 8px">This room has no name yet.</p><div class="acts" style="margin:0"><button class="btn small primary" type="button" data-rename>Name this room</button></div></div>` + body;
     if (admin) body += `<div class="acts" style="border-top:1px solid var(--line);padding-top:10px">
       ${off?'':'<button class="btn small danger" type="button" data-redtag>Mark out of order</button>'}
-      ${s.kind!=='transition'?'<button class="btn small" type="button" data-rename>Rename</button>':''}
+      ${s.kind!=='transition'?`<button class="btn small" type="button" data-rename>${s.kind==='room' && !e.name ? 'Name this room' : 'Rename'}</button>`:''}
+      ${e.label && e.name && e.label!==e.name ? `<button class="btn small" type="button" data-unlabel>Use original name (${esc(e.name)})</button>` : ''}
       <button class="btn small danger" type="button" data-delete>Delete</button></div>`;
   }
   card.innerHTML = `<div class="card-h">${glyphFor(s.kind,e)}<div><h3>${esc(entityLabel(s.kind,e))}</h3><div class="sub">${esc(sub)}</div></div><button class="iconbtn x" type="button" data-close-card aria-label="Close details">${icon('i-x',16)}</button></div><div class="card-b">${body}</div>`;
@@ -2174,12 +2357,17 @@ svg.addEventListener('pointerup', async ev => {
     $('#lyr-draft').innerHTML = '';
     const x1=Math.min(d.x0,d.x1), y1=Math.min(d.y0,d.y1), x2=Math.max(d.x0,d.x1), y2=Math.max(d.y0,d.y1);
     if (x2-x1 < 12 || y2-y1 < 12){ toast('Drag to draw a bigger room.'); return; }
+    const now = new Date();
     const v = await form({ title:'Add a room', desc:`On ${floorName(ui.floor)}.`, submit:'Add room', fields:[
-      {name:'name', label:'Room name', type:'text', required:true, placeholder:'e.g. B10'},
+      {name:'kind', label:'Type of room', type:'choices', value:'normal', options:[['normal','Normal room','i-room'],['temporary','Temporary (event)','i-cal']]},
+      {name:'name', label:'Room name', type:'text', required:true, placeholder:'e.g. B10 or Careers fair'},
+      {name:'start', label:'Starts', type:'datetime-local', value:toLocalInput(now), show:'temporary'},
+      {name:'end', label:'Ends', type:'datetime-local', value:toLocalInput(new Date(now.getTime()+3*3600e3)), show:'temporary'},
       {name:'tags', label:'Tags (comma separated)', type:'text', placeholder:'quiet, charging'},
       {name:'note', label:'Good to know (optional)', type:'textarea', placeholder:'e.g. This room is often cold.'} ]});
     if (!v) return;
-    const room = { id:uid('r'), name:v.name.trim(), floor:ui.floor, rect:[x1,y1,x2,y2].map(n=>Math.round(n)), tags:splitTags(v.tags), notes:v.note.trim()?[v.note.trim()]:[], printed:false };
+    const room = { id:uid('r'), name:v.name.trim(), floor:ui.floor, rect:[x1,y1,x2,y2].map(n=>Math.round(n)), tags:splitTags(v.tags), notes:v.note.trim()?[v.note.trim()]:[], printed:false, kind:v.kind,
+      ...(v.kind==='temporary' ? { start:v.start, end:v.end } : {}) };
     await api.addRoom(room); ui.selected = {kind:'room', id:room.id}; render(); toast(`Added ${room.name}.`);
     return;
   }
@@ -2229,11 +2417,13 @@ async function flagAt(p, hit, preset){
   if (!target && !inPlan(p)) return;
   const te = target && getEntity(target.kind, target.id);
   const v = await form({ title:'Report a problem', desc: te ? `About ${entityLabel(target.kind,te)}. It appears on the map straight away.` : `At this spot on ${floorName(ui.floor)}. It appears on the map straight away.`, submit:'Report problem', fields:[
-    {name:'category', label:'What kind of problem?', type:'choices', value:'broken', options:[['broken','Broken'],['leak','Leak or spill'],['door','Door problem'],['blocked','Blocked path'],['other','Something else']]},
-    {name:'title', label:'Short description', type:'text', required:true, placeholder:'e.g. Water fountain leaking'},
-    {name:'detail', label:'Details (optional)', type:'textarea'} ]});
+    {name:'category', label:'What kind of problem?', type:'choices', value:data.issueTypes[0]?.id, options:data.issueTypes.map(t => [t.id, t.label])},
+    {name:'title', label:'Short description (only admins see this)', type:'text', placeholder:'e.g. Water fountain leaking'},
+    {name:'detail', label:'Details for the admin team (optional)', type:'textarea'} ]});
   if (!v) return;
-  const m = { id:uid('m'), kind:'issue', status:'active', category:v.category, title:v.title.trim(), detail:v.detail.trim(), by:ui.role, at:new Date().toISOString() };
+  if (!v.category){ toast('Choose what kind of problem it is.'); return; }
+  const catLabel = data.issueTypes.find(t => t.id===v.category)?.label || 'Problem';
+  const m = { id:uid('m'), kind:'issue', status:'active', category:v.category, categoryLabel:catLabel, title:v.title.trim() || catLabel, detail:v.detail.trim(), by:ui.role, at:new Date().toISOString() };
   if (target){ m.targetKind = target.kind; m.targetId = target.id; } else { m.floor = ui.floor; m.x = Math.round(p.x); m.y = Math.round(p.y); }
   await api.addMarker(m); ui.tool = 'select'; ui.selected = {kind:'marker', id:m.id};
   if (ui.route) await refreshRoute();
@@ -2358,6 +2548,9 @@ async function uploadMap(floorId, file){
   render();
   toast(used ? `Map replaced on ${fl.name}. Rooms and walkways kept their positions; check they still line up.` : `Map added to ${fl.name}. Next, draw walkways along the corridors.`);
 }
+document.addEventListener('change', ev => {
+  if (ev.target.matches && ev.target.matches('[data-hide-occ]')){ data.hideOccupants = ev.target.checked; saveData(); render(); toast(data.hideOccupants ? 'Office labels hidden.' : 'Office labels shown.'); }
+});
 document.addEventListener('change', async ev => {
   const inp = ev.target.closest && ev.target.closest('input[data-upload]'); if (!inp) return;
   const file = inp.files[0]; const id = inp.dataset.upload; inp.value = '';
@@ -2381,6 +2574,37 @@ document.addEventListener('click', async ev => {
   if ('disconnectArduino' in ds){ await disconnectArduino(); return; }
   if (ds.tool){ ui.tool = ui.tool===ds.tool && ds.tool!=='select' ? 'select' : ds.tool; ui.pick = null; ui.wDraft = []; render(); return; }
   if ('wnew' in ds){ ui.wDraft = []; render(); return; }
+  if ('occEdit' in ds){
+    const r = getEntity('room', ui.selected.id);
+    const v = await form({ title:'Office label', desc:`Shown on the map under ${r.name || 'the room'}. It doesn’t change the room’s name or its routing.`, submit:'Save label', fields:[
+      {name:'occ', label:'Who or what is in this office (leave blank for none)', type:'text', value:r.occupant||'', placeholder:'e.g. Dr A. Sample'} ]});
+    if (!v) return; const occ = v.occ.trim(); await api.updateEntity('room', r.id, { occupant:occ }); render(); toast(occ ? 'Office label saved.' : 'Office label removed.'); return;
+  }
+  if ('unlabel' in ds){ await api.updateEntity(ui.selected.kind, ui.selected.id, { label:undefined }); render(); toast('Original name restored.'); return; }
+  if ('routeNodes' in ds){
+    let out;
+    try { const config = await loadRouteConfig(); await resolveAutoRooms(config); out = JSON.stringify(config.rooms, null, 2); }
+    catch(e){ out = 'Could not reach the route backend: ' + e.message; }
+    await form({ title:'Room route nodes', desc:'The backend node each room routes to. Rooms that were "auto" in route-node-map.json show what they matched (null = no node found in that room). You can paste these IDs into the file to make them permanent.', submit:'Close', fields:[{name:'json', label:'Rooms', type:'textarea', value:out, rows:14, copy:true}] });
+    return;
+  }
+  if ('occDel' in ds){ await api.updateEntity('room', ui.selected.id, { occupant:'' }); render(); toast('Office label removed.'); return; }
+  if ('catAdd' in ds){
+    const v = await form({ title:'Add a problem category', submit:'Add category', fields:[{name:'label', label:'Category name', type:'text', required:true, placeholder:'e.g. Wi-Fi not working'}] });
+    if (!v) return; await api.setIssueTypes([...data.issueTypes, { id:uid('c'), label:v.label.trim() }]); render(); toast('Category added.'); return;
+  }
+  if (ds.catEdit){
+    const t = data.issueTypes.find(x => x.id===ds.catEdit);
+    const v = await form({ title:'Rename category', desc:'Existing reports in this category show the new name.', submit:'Save category', fields:[{name:'label', label:'Category name', type:'text', required:true, value:t.label}] });
+    if (!v) return; await api.setIssueTypes(data.issueTypes.map(x => x.id===t.id ? { ...x, label:v.label.trim() } : x)); render(); toast('Category saved.'); return;
+  }
+  if (ds.catDel){
+    const t = data.issueTypes.find(x => x.id===ds.catDel);
+    const v = await form({ title:`Delete “${t.label}”?`, desc:'Students can no longer choose it. Reports already made keep this name.', submit:'Delete category', danger:true, fields:[] });
+    if (!v) return;
+    for (const m of data.markers) if (m.category===t.id && !m.categoryLabel) m.categoryLabel = t.label;
+    await api.setIssueTypes(data.issueTypes.filter(x => x.id!==t.id)); render(); toast('Category deleted.'); return;
+  }
   if ('wundo' in ds){
     const id = ui.wHistory.pop(); const w = data.walkways.find(x => x.id===id);
     if (w){ await api.deleteEntity('walkway', id); const last = ui.wDraft[ui.wDraft.length-1]; ui.wDraft = last && last.x===w.x2 && last.y===w.y2 ? [{ x:w.x1, y:w.y1 }] : []; if (ui.route) await refreshRoute(); }
@@ -2461,8 +2685,17 @@ document.addEventListener('click', async ev => {
   }
   if ('rename' in ds){
     const s = ui.selected; const e = getEntity(s.kind,s.id);
-    const v = await form({ title:'Rename', submit:'Save name', fields:[{name:'name', label:'Name', type:'text', required:true, value:entityLabel(s.kind,e)}] });
-    if (!v) return; await api.updateEntity(s.kind, s.id, { name:v.name.trim() }); render(); toast('Name saved.'); return;
+    const unnamed = s.kind==='room' && !e.name;
+    const keyed = (s.kind==='room' || s.kind==='amenity') && e.name;  // has a routing name
+    const v = await form({ title: unnamed ? 'Name this room' : 'Rename',
+      desc: unnamed ? 'The name appears on the map like the other room labels.' : keyed ? `This changes the name people see. Routing still uses the original name, “${e.name}”.` : '',
+      submit:'Save name', fields:[{name:'name', label:'Name', type:'text', required:true, value: unnamed ? '' : entityLabel(s.kind,e), placeholder:'e.g. C12'}] });
+    if (!v) return;
+    const nn = v.name.trim();
+    let patch;
+    if (s.kind==='room' || s.kind==='amenity') patch = unnamed ? { name:nn, label:nn } : { label: nn===e.name ? undefined : nn };  // an unnamed room takes the name as its routing name too
+    else patch = { name:nn };
+    await api.updateEntity(s.kind, s.id, patch); render(); toast('Name saved.'); return;
   }
   if ('delete' in ds){
     const s = ui.selected; const e = getEntity(s.kind,s.id);
@@ -2539,7 +2772,7 @@ document.addEventListener('click', async ev => {
     let d;
     try { d = JSON.parse(v.json); if (!Array.isArray(d.floors) || !d.floors.length || !d.rooms || !d.amenities || !d.transitions || !d.groups || !d.markers) throw new Error('missing'); }
     catch(e){ toast('That JSON needs floors, rooms, amenities, transitions, groups and markers.'); return; }
-    d.id = uid('b'); d.name = d.name || 'Imported building'; d.walkways ||= []; d.suggestions ||= [];
+    d.id = uid('b'); d.name = d.name || 'Imported building'; d.walkways ||= []; d.suggestions ||= []; d.issueTypes ||= defaultIssueTypes();
     d.floors.forEach((f,i) => { f.short ||= String(f.id).slice(0,3); f.level ??= i; f.bounds ||= { ...DEFAULT_BOUNDS }; f.img ||= null; });
     await api.createBuilding(d); switchProject(d.id); toast(`Imported ${d.name}.`); return;
   }
@@ -2580,7 +2813,7 @@ $('#swap').onclick = () => { [ui.from, ui.to] = [ui.to, ui.from]; $('#in-from').
 $('#sel-card').innerHTML = CARDS.map(c => `<option value="${c.id}">${esc(c.label)}</option>`).join('');
 $('#sel-card').onchange = e => { ui.card = e.target.value; prefsChanged(); };
 $('#tg-step').onchange = e => { ui.stepFree = e.target.checked; prefsChanged(); };
-$('#tg-guided').onchange = async e => {
+if ($('#tg-guided')) $('#tg-guided').onchange = async e => {  // toggle removed from the page; kept so it can be restored
   ui.guidedMode=e.target.checked;
   ui.guidedStepIndex=0;
   stopPlayback(false);
