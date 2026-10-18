@@ -1,6 +1,6 @@
 # Pythagoras
 
-Pythagoras helps people find the most efficient and accessible route to their destination within a building. The frontend uses the graph extracted by `gemini-map/pdf_to_json_map.py` as its routing source of truth. It translates room and connector selections to graph node IDs, requests a route from FastAPI, and transforms the returned graph coordinates into the HTML map's SVG coordinate system.
+Pythagoras helps people find the most efficient and accessible route to their destination within a building. The frontend uses the graph extracted by `gemini-map/pdf_to_json_map.py` as its routing source of truth. It translates mapped room, lab, and connector selections to graph node IDs, requests a route from FastAPI, and transforms the returned graph coordinates into the HTML map's SVG coordinate system.
 
 ## Run the integrated prototype
 
@@ -54,7 +54,7 @@ Pythagoras floor IDs are intentionally not the PDF page numbers:
 | B | 4 (Third floor) |
 | A | 5 (Fourth floor) |
 
-Maintain that mapping in `frontend/route-node-map.json`. Room mappings use exact curated IDs, including aliases where the labels differ (`E14` maps to `E14 (Middle)`, and `E15` maps to `E15 (Post Finance Safety)`). Stair and lift IDs are explicitly mapped in the `connectors` section. Do not infer routes from visual proximity or label similarity: update the curated mapping whenever a new HTML destination is added, and verify every ID against `/map`.
+Maintain that mapping in `frontend/route-node-map.json`. Room mappings use exact curated IDs, including aliases where the labels differ (`E14` maps to `E14 (Middle)`, and `E15` maps to `E15 (Post Finance Safety)`). Stair and lift IDs are explicitly mapped in the `connectors` section. Lab 1 on D and Lab 2 on C reuse the existing graph nodes at their displayed locations; Lab 3 on B uses a manually added approximate node connected to the nearest left and right corridor junctions. The Lab 3 position and links are inferred from the HTML marker and must be checked against the floor plan before relying on them for real navigation. Do not infer routes from visual proximity or label similarity: update the curated mapping whenever a new HTML destination is added, and verify every ID against `/map`.
 
 The file's `transforms` map each graph point `(x, y)` to an SVG point:
 
@@ -85,7 +85,7 @@ An edge with `requires_id_card: null` is open to every card category, including 
 
 When an admin marks a mapped room or connector out of order, the frontend sends its graph node ID to `PUT /admin/node-status`. The backend persists closed node IDs in `backend/data/node_status.json` and treats every connected graph edge and configured floor transfer as `blocked: true` while that node is closed. Resolving the last active closure reopens its routes without overwriting the source graph. This prototype endpoint has no authentication; deploy it only behind trusted access until admin authentication is implemented.
 
-Live incidents, timed access markers, “avoid reported problems,” amenities, and arbitrary map points are not connected to backend routing yet. Routes can start or end only at mapped rooms and stairs/lifts.
+Live incidents, timed access markers, “avoid reported problems,” other amenities, and arbitrary map points are not connected to backend routing yet. Routes can start or end at mapped rooms, stairs/lifts, and the three explicitly mapped labs.
 
 ## API contract
 

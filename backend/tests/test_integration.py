@@ -72,6 +72,11 @@ class RoutingTests(unittest.TestCase):
             for floor in config["connectors"].values()
             for node_id in floor.values()
         )
+        mapped_ids.update(
+            node_id
+            for floor in config["amenities"].values()
+            for node_id in floor.values()
+        )
 
         self.assertTrue(mapped_ids)
         self.assertEqual(mapped_ids - self.node_ids, set())
@@ -80,6 +85,46 @@ class RoutingTests(unittest.TestCase):
             {str(floor["page"]) for floor in self.map_data["floors"]},
         )
         self.assertEqual(set(config["transforms"]), set(config["floorPages"]))
+
+    def test_lab_routes_are_mapped_and_connected_on_their_floors(self):
+        config = json.loads(NODE_MAP_PATH.read_text(encoding="utf-8"))
+        expected = {
+            "D": ("Lab 1", "p002_first_floor_room_large_hall"),
+            "C": ("Lab 2", "p003_second_floor_room_u10"),
+            "B": ("Lab 3", "p004_third_floor_room_lab_3"),
+        }
+        page_by_floor = {floor["name"]: floor["page"] for floor in self.map_data["floors"]}
+
+        for floor, (label, node_id) in expected.items():
+            with self.subTest(floor=floor):
+                self.assertEqual(config["amenities"][floor][label], node_id)
+                self.assertIn(node_id, self.node_ids)
+                page = int(config["floorPages"][floor])
+                starts = [
+                    node["id"]
+                    for node in self.map_data["nodes"]
+                    if node["id"] != node_id and page_by_floor[node["floor"]] == page
+                ]
+                self.assertTrue(
+                    any(
+                        find_route(self.map_data, start, node_id, transfers=self.transfers)["status"] == "ok"
+                        for start in starts
+                    ),
+                    f"No same-floor route reaches {node_id}",
+                )
+
+        lab3_edges = {
+            (edge["from"], edge["to"])
+            for edge in self.map_data["edges"]
+            if "lab_3" in edge["from"] or "lab_3" in edge["to"]
+        }
+        self.assertEqual(
+            lab3_edges,
+            {
+                ("p004_third_floor_room_lab_3", "p004_third_floor_corr_ne_corner"),
+                ("p004_third_floor_room_lab_3", "p004_third_floor_corr_east_stairs_junc"),
+            },
+        )
 
     def test_transfer_endpoints_exist_in_graph(self):
         for transfer in self.transfers:
@@ -257,7 +302,7 @@ class RoutingApiTests(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         catalog = response.json()
-        self.assertEqual(len(catalog["nodes"]), 280)
+        self.assertEqual(len(catalog["nodes"]), 281)
         room = next(node for node in catalog["nodes"] if node["id"] == "p001_ground_floor_room_e20")
         self.assertEqual(room["page"], 1)
 
@@ -324,7 +369,7 @@ class RoutingApiTests(unittest.TestCase):
             )
 
         self.assertEqual(catalog.status_code, 200)
-        self.assertEqual(len(catalog.json()["nodes"]), 280)
+        self.assertEqual(len(catalog.json()["nodes"]), 281)
         self.assertEqual(catalog.json()["nodes"][0]["page"], 1)
         self.assertEqual(route.status_code, 200)
         self.assertEqual(route.json()["status"], "ok")

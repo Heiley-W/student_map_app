@@ -689,6 +689,7 @@ function routeNodeFor(ref, config){
     const group = { SL:'west_stairs', SR:'east_stairs', LM:'central_lift', LR:'east_lift' }[entity.group];
     return group ? config.connectors[entity.floor]?.[group] || null : null;
   }
+  if (ref.kind==='amenity') return config.amenities[entity.floor]?.[entity.name] || null;
   return null;
 }
 function adaptRoute(route, config){

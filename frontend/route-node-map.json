@@ -106,6 +106,17 @@
       "east_lift": "p005_fourth_floor_lift_east"
     }
   },
+  "amenities": {
+    "D": {
+      "Lab 1": "p002_first_floor_room_large_hall"
+    },
+    "C": {
+      "Lab 2": "p003_second_floor_room_u10"
+    },
+    "B": {
+      "Lab 3": "p004_third_floor_room_lab_3"
+    }
+  },
   "transforms": {
     "E": { "x": [14.6287, -1.6835], "y": [7.9961, 9.2718] },
     "D": { "x": [14.5417, 1.0404], "y": [8.1273, 4.9524] },
