@@ -86,6 +86,7 @@ class RoutingTests(unittest.TestCase):
             node_id
             for floor in config["rooms"].values()
             for node_id in floor.values()
+            if node_id != "auto"
         }
         mapped_ids.update(
             node_id
@@ -96,6 +97,7 @@ class RoutingTests(unittest.TestCase):
             node_id
             for floor in config["amenities"].values()
             for node_id in floor.values()
+            if node_id != "auto"
         )
 
         self.assertTrue(mapped_ids)
