@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>UCL Indoor Wayfinder</title>
+<title>Pythagoras</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
@@ -132,6 +132,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .steps li::before{content:counter(s);width:24px;height:24px;border-radius:50%;background:var(--paper);border:2px solid var(--ink);display:grid;place-items:center;font-size:12px;font-weight:700}
 .steps li.change::before{background:var(--signal);border-color:var(--signal);color:#16213E}
 .steps li.here{background:var(--signal-soft)}
+.steps li.active{outline:2px solid var(--signal);outline-offset:-2px;background:var(--signal-soft)}
 .steps .sm{display:block;font-size:12px;color:var(--muted)}
 .notice{border-left:4px solid var(--alert);background:var(--alert-soft);padding:10px 12px;border-radius:0 10px 10px 0;margin-bottom:12px}
 .notice p{margin:0 0 8px}
@@ -167,6 +168,8 @@ button,input,select,textarea{font:inherit;color:inherit}
 .r-case{fill:none;stroke:#fff;stroke-width:13;stroke-linecap:round;stroke-linejoin:round}
 .r-line{fill:none;stroke:#16213E;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}
 .r-chev{fill:none;stroke:#FFC83D;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.play-marker-halo{fill:rgba(245,183,0,.3);stroke:#16213E;stroke-width:2}
+.play-marker-dot{fill:#F5B700;stroke:#fff;stroke-width:3}
 .badge-t{cursor:pointer}
 .badge-t rect{fill:#F5B700;stroke:#16213E;stroke-width:2}
 .badge-t text{font-size:17px;font-weight:700;fill:#16213E}
@@ -200,6 +203,12 @@ button,input,select,textarea{font:inherit;color:inherit}
 .banner{position:absolute;left:50%;bottom:22px;transform:translateX(-50%);background:var(--ink);color:var(--paper);border-radius:999px;padding:8px 8px 8px 18px;display:flex;gap:12px;align-items:center;box-shadow:0 8px 24px rgba(10,20,40,.3);z-index:6;max-width:calc(100% - 140px)}
 .banner[hidden]{display:none}
 .banner button{background:var(--signal);color:#16213E;border:0;border-radius:999px;padding:6px 12px;font-weight:700;cursor:pointer}
+.banner.playback{border-radius:14px;align-items:center;max-width:min(620px,calc(100% - 140px))}
+.banner.playback .playback-copy{min-width:0;flex:1}
+.banner.playback .playback-copy strong{display:block}
+.banner.playback .playback-copy span,.banner.playback .playback-copy small{display:block}
+.banner.playback .playback-copy small{opacity:.75;margin-top:3px}
+.banner.playback button{flex:0 0 auto}
 .banner.tip{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
 .zoom{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;z-index:5;box-shadow:0 4px 14px rgba(10,20,40,.10)}
 .zoom button{width:38px;height:36px;border:0;background:none;cursor:pointer;font-size:18px;color:var(--ink)}
@@ -302,8 +311,8 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
     <div class="brand">
       <div class="brand-mark"><svg width="22" height="22"><use href="#i-stairs"/></svg></div>
       <div>
-        <h1>UCL Wayfinder</h1>
-        <p>Indoor routes</p>
+        <h1>Pythagoras</h1>
+        <p>An application for people to find the most efficient and accessible route to their destination within a building.</p>
       </div>
       <div class="role" role="group" aria-label="View as">
         <button type="button" data-role="student" aria-pressed="true">Student</button>
@@ -338,7 +347,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
         <div><label class="lbl" for="sel-card">Your card</label><select id="sel-card"></select></div>
         <label class="row"><input type="checkbox" class="switch" id="tg-step"> Step-free route (lifts only)</label>
         <button class="btn primary wide" id="btn-route" type="button">Find route</button>
-        <p class="hint">Closed mapped rooms and connectors are removed from routes. On card-required edges, visitors are blocked and students are blocked after 6 PM. Step-free routing treats accessibility as available unless an edge is marked inaccessible.</p>
+        <p class="hint">Closed mapped rooms and connectors are removed from routes. On card-required edges, visitors are blocked and students are blocked after 6 PM. Step-free routing avoids stairs and uses lifts between floors.</p>
       </div>
     </div>
 
@@ -981,7 +990,7 @@ const ui = {
   from:null, to:null,          // {kind:'room'|'amenity'|'transition'|'point', id?, floor?, x?, y?, label}
   card:'student', stepFree:false, avoidAll:false, when:toLocalInput(new Date()),
   avoidIds:[], keptIds:[],
-  route:null, routeReq:null, stale:false,
+  route:null, routeReq:null, stale:false, playback:null,
   showAll:null,                // {query,label,items:[{kind,id}], dist?:Map}
   pick:null,                   // 'from'|'to' while choosing on map
   wDraft:[],                   // points of the walkway being drawn
@@ -1070,6 +1079,7 @@ function markStale(){ if (ui.route) ui.stale = true; }
 /* ---------------- show all ---------------- */
 async function showAll(gp, end='to'){
   ui.showAll = { ...gp, end, dist:null };
+  stopPlayback(false);
   ui.route = null; ui.selected = null;
   const floorsWith = new Set(gp.items.map(it => getEntity(it.kind,it.id)?.floor));
   if (!floorsWith.has(ui.floor)){ const first = [...floorsWith].sort((a,b)=>floorById(a).level-floorById(b).level)[0]; if (first) switchFloor(first); }
@@ -1082,6 +1092,7 @@ function buildReq(){
 }
 async function findRoute(){
   if (!ui.from || !ui.to){ toast(ui.from ? 'Choose a destination first.' : 'Choose a starting point first.'); (ui.from ? $('#in-to') : $('#in-from')).focus(); return; }
+  stopPlayback(false);
   ui.routeReq = buildReq();
   ui.route = { status:'loading' };
   render();
@@ -1216,6 +1227,14 @@ function renderMap(){
         pins += badge(first, `From ${floorName(sg.entry.fromFloor)}`, 'badge-in', `data-goto="${sg.entry.fromFloor}"`);
       }
     });
+    const playback = ui.playback;
+    if (playback && playback.segmentIndex < route.segments.length){
+      const segment = route.segments[playback.segmentIndex];
+      if (segment.floor === f){
+        const [x,y] = pointAlong(segment.points, playback.progress);
+        pins += `<g class="play-marker" transform="translate(${x} ${y})" pointer-events="none" aria-label="Simulated current position"><circle class="play-marker-halo" r="17"/><circle class="play-marker-dot" r="9"/></g>`;
+      }
+    }
   }
   // endpoints without a route
   if (!route){
@@ -1262,13 +1281,14 @@ function switchFloor(id){
   const a = curBounds(); ui.floor = id; const b = curBounds();
   if (a.x!==b.x || a.y!==b.y || a.w!==b.w || a.h!==b.h) fit();
 }
-function setFloor(id){ if (!floorById(id)) return; switchFloor(id); render(); }
+function setFloor(id){ if (!floorById(id)) return; if (ui.playback) stopPlayback(false); switchFloor(id); render(); }
 function stepFloor(dir){ const sf = sortedFloors(); const f = sf[sf.findIndex(x=>x.id===ui.floor) + dir]; if (f) setFloor(f.id); }
 function renderBuildings(){
   $('#sel-bld').innerHTML = Object.values(store.projects).map(b => `<option value="${b.id}" ${b.id===store.active?'selected':''}>${esc(b.name)}</option>`).join('');
 }
 function switchProject(id){
   if (!store.projects[id]) return;
+  stopPlayback(false);
   store.active = id; data = store.projects[id]; FLOORS = data.floors; saveData();
   Object.assign(ui, { selected:null, from:null, to:null, route:null, routeReq:null, stale:false, showAll:null, pick:null, avoidIds:[], keptIds:[], tool:'select', wDraft:[] });
   $('#in-from').value = ''; $('#in-to').value = '';
@@ -1292,6 +1312,25 @@ function renderTools(){
 function renderBanner(){
   const b = $('#banner');
   const hints = { flag:'Click where the problem is, or on a facility, room, stairs or lift.', room:'Drag to draw the new room.', amenity:'Click where the facility is.', marker:'Click a spot, or click a facility, room, stairs or lift to attach the marker to it.', transition:'Click where the stairs or lift are on this floor.', walkway:'Click along corridors to add a local walkway annotation. Backend routes still use the extracted graph. Click the last point again to start a new line.', erasewalk:'Click a dotted walkway line to delete it.' };
+  if (ui.playback && ui.route?.status==='ok'){
+    const playback = ui.playback;
+    const current = buildSteps(ui.route).find(step =>
+      step.segmentIndex===playback.segmentIndex && step.phase===playback.phase
+    );
+    const message = playback.status==='complete'
+      ? `Arrived at ${ui.to?.label ?? 'your destination'}.`
+      : current?.text ?? 'Following your route.';
+    const heading = playback.status==='waiting'
+      ? `Changing floors in ${Math.ceil(playback.waitRemaining/1000)} second${playback.waitRemaining>1000?'s':''}`
+      : playback.status==='complete' ? 'Route complete'
+      : playback.status==='paused' ? 'Playback paused'
+      : `Route playback · ${floorName(ui.floor)}`;
+    const action = playback.status==='playing' || playback.status==='waiting' ? 'Pause' : playback.status==='paused' ? 'Resume' : 'Replay';
+    b.className='banner playback';
+    b.innerHTML = `<span class="playback-copy" aria-live="polite"><strong>${esc(heading)}</strong><span>${esc(message)}</span><small>Simulated playback — this does not track your live position.</small></span>
+      <button type="button" data-play-route>${action}</button><button type="button" data-stop-playback>Stop</button>`;
+    b.hidden=false; return;
+  }
   if (ui.pick){ b.className='banner tip'; b.innerHTML = `<span>Click the map to set your ${ui.pick==='from'?'start':'destination'} on ${esc(floorName(ui.floor))}.</span><button type="button" data-cancel-pick>Cancel</button>`; b.hidden=false; return; }
   if (ui.tool!=='select'){ b.className='banner tip'; b.innerHTML = `<span>${hints[ui.tool]}</span>${ui.tool==='walkway' && ui.wHistory.length ? '<button type="button" data-wundo>Undo</button>' : ''}${ui.tool==='walkway' && ui.wDraft.length ? '<button type="button" data-wnew>New line</button>' : ''}<button type="button" data-tool="select">Done</button>`; b.hidden=false; return; }
   const route = ui.route?.status==='ok' ? ui.route : null;
@@ -1346,7 +1385,7 @@ function renderResults(){
   }
   if (r.status==='no_route'){
     const card = CARDS.find(c=>c.id===ui.card)?.label;
-    el.innerHTML = staleNote + `<div class="notice"><p><strong>No route with these settings.</strong> ${ui.stepFree?'An edge may be marked inaccessible, or no path meets the selected filters. ':''}Your card: ${esc(card)}.</p>
+    el.innerHTML = staleNote + `<div class="notice"><p><strong>No route with these settings.</strong> ${ui.stepFree?'No path avoiding stairs meets the selected filters. ':''}Your card: ${esc(card)}.</p>
       <div class="acts">${ui.stepFree?'<button class="btn small" type="button" data-toggle-step>Try without step-free filtering</button>':''}</div></div>`;
     return;
   }
@@ -1364,21 +1403,119 @@ function renderResults(){
   el.innerHTML = staleNote + `<div class="res-head"><h2>Your route</h2><button class="btn small" type="button" data-clear-route>Clear</button></div>
     <div class="summary"><strong>Route found</strong><span class="hint">${r.floorChanges?`${r.floorChanges} floor change${r.floorChanges>1?'s':''}`:'Same floor'}${ui.stepFree?', step-free':''}</span></div>
     ${issueHtml}
-    <ol class="steps">${steps.map(s => `<li class="${s.change?'change':''} ${s.floor===ui.floor?'here':''}" data-goto="${s.floor}" tabindex="0"><span>${esc(s.text)}<span class="sm">${esc(floorName(s.floor))}${s.sub?', '+esc(s.sub):''}</span></span></li>`).join('')}</ol>`;
+    <div class="acts" style="display:flex;gap:6px;margin:0 0 10px">
+      <button class="btn primary" type="button" data-play-route>${playbackButtonLabel()}</button>
+      ${ui.playback?'<button class="btn small" type="button" data-stop-playback>Stop</button>':''}
+    </div>
+    <ol class="steps">${steps.map(s => `<li class="${s.change?'change':''} ${s.floor===ui.floor?'here':''} ${isPlaybackStep(s)?'active':''}" data-goto="${s.floor}" tabindex="0"><span>${esc(s.text)}<span class="sm">${esc(floorName(s.floor))}${s.sub?', '+esc(s.sub):''}</span></span></li>`).join('')}</ol>`;
 }
 function buildSteps(r){
   const steps = []; const segs = r.segments;
-  steps.push({ floor:segs[0].floor, text:`Start at ${ui.from.label}` });
+  steps.push({ floor:segs[0].floor, text:`Start at ${ui.from.label}`, segmentIndex:0, phase:'start' });
   segs.forEach((sg, i) => {
     if (sg.exit){
-      steps.push({ floor:sg.floor, text:`Follow the route to ${sg.exit.group}` });
-      steps.push({ floor:sg.floor, change:true, text:`${sg.exit.kind==='lift'?'Take the':'Go'} ${sg.exit.dir==='up'?'up the ':'down the '}${sg.exit.group} to ${floorName(sg.exit.toFloor)}` });
+      steps.push({ floor:sg.floor, text:`Follow the route to ${sg.exit.group}`, segmentIndex:i, phase:'walk' });
+      steps.push({ floor:sg.floor, change:true, text:`${sg.exit.kind==='lift'?'Take the':'Go'} ${sg.exit.dir==='up'?'up the ':'down the '}${sg.exit.group} to ${floorName(sg.exit.toFloor)}`, segmentIndex:i, phase:'transfer' });
     } else {
-      steps.push({ floor:sg.floor, text:`Follow the route to ${ui.to.label}` });
+      steps.push({ floor:sg.floor, text:`Follow the route to ${ui.to.label}`, segmentIndex:i, phase:'walk' });
     }
   });
-  steps.push({ floor:segs[segs.length-1].floor, text:`Arrive at ${ui.to.label}` });
+  steps.push({ floor:segs[segs.length-1].floor, text:`Arrive at ${ui.to.label}`, segmentIndex:segs.length-1, phase:'arrival' });
   return steps;
+}
+function playbackButtonLabel(){
+  const status=ui.playback?.status;
+  if (status==='playing' || status==='waiting') return 'Pause';
+  if (status==='paused') return 'Resume';
+  return status==='complete' ? 'Replay route' : 'Play route';
+}
+function isPlaybackStep(step){
+  const playback=ui.playback;
+  return !!playback && step.segmentIndex===playback.segmentIndex && step.phase===playback.phase;
+}
+function pointAlong(points, progress){
+  if (!points.length) return [0,0];
+  if (points.length===1) return points[0];
+  const lengths=[]; let total=0;
+  for (let i=1;i<points.length;i++){ const length=hyp(...points[i-1],...points[i]); lengths.push(length); total+=length; }
+  let distance=total*clamp(progress,0,1);
+  for (let i=0;i<lengths.length;i++){
+    if (distance<=lengths[i] || i===lengths.length-1){
+      const t=lengths[i] ? clamp(distance/lengths[i],0,1) : 0;
+      return [points[i][0]+(points[i+1][0]-points[i][0])*t,points[i][1]+(points[i+1][1]-points[i][1])*t];
+    }
+    distance-=lengths[i];
+  }
+  return points[points.length-1];
+}
+function stopPlayback(redraw=true){
+  const playback=ui.playback;
+  if (playback?.frame) clearTimeout(playback.frame);
+  if (playback?.timer) clearTimeout(playback.timer);
+  ui.playback=null;
+  if (redraw) render();
+}
+function playRoute(){
+  if (ui.route?.status!=='ok') return;
+  let playback=ui.playback;
+  if (playback?.status==='playing' || playback?.status==='waiting'){
+    playback.status='paused';
+    if (playback.frame) clearTimeout(playback.frame);
+    if (playback.timer){
+      clearTimeout(playback.timer);
+      playback.waitRemaining=Math.max(0,playback.waitRemaining-(performance.now()-playback.waitStartedAt));
+      playback.timer=null;
+    }
+    render(); return;
+  }
+  if (playback?.status==='paused'){
+    if (playback.phase==='transfer') scheduleFloorChange(playback);
+    else { playback.status='playing'; playback.lastFrameAt=0; schedulePlaybackFrame(playback); }
+    render(); return;
+  }
+  stopPlayback(false);
+  playback=ui.playback={status:'playing',segmentIndex:0,progress:0,phase:'walk',lastFrameAt:0,frame:null,timer:null,waitRemaining:1000};
+  switchFloor(ui.route.segments[0].floor); fit(); render();
+  schedulePlaybackFrame(playback);
+}
+function segmentDuration(segment){
+  let distance=0;
+  for(let i=1;i<segment.points.length;i++) distance+=hyp(...segment.points[i-1],...segment.points[i]);
+  return distance===0 ? 0 : Math.max(1200,distance/220*1000);
+}
+function schedulePlaybackFrame(playback){
+  playback.frame=setTimeout(()=>{
+    if (ui.playback!==playback || playback.status!=='playing') return;
+    const timestamp=performance.now();
+    const segment=ui.route.segments[playback.segmentIndex];
+    if (!playback.lastFrameAt) playback.lastFrameAt=timestamp;
+    else {
+      const duration=segmentDuration(segment);
+      playback.progress=duration===0 ? 1 : Math.min(1,playback.progress+(timestamp-playback.lastFrameAt)/duration);
+      playback.lastFrameAt=timestamp;
+    }
+    renderMap();
+    if (playback.progress>=1){
+      if (segment.exit){
+        playback.phase='transfer'; playback.status='waiting'; playback.waitRemaining=1000;
+        render(); scheduleFloorChange(playback);
+      } else {
+        playback.phase='arrival'; playback.status='complete'; render();
+      }
+      return;
+    }
+    schedulePlaybackFrame(playback);
+  },50);
+}
+function scheduleFloorChange(playback){
+  playback.status='waiting'; playback.waitStartedAt=performance.now();
+  playback.timer=setTimeout(()=>{
+    if (ui.playback!==playback || playback.status!=='waiting') return;
+    playback.segmentIndex++;
+    playback.progress=0; playback.phase='walk'; playback.status='playing'; playback.timer=null;
+    switchFloor(ui.route.segments[playback.segmentIndex].floor);
+    render(); schedulePlaybackFrame(playback);
+  },playback.waitRemaining);
 }
 
 /* ---------------- sidebar: admin ---------------- */
@@ -1705,7 +1842,7 @@ document.addEventListener('change', async ev => {
   await uploadMap(id, file);
 });
 
-async function refreshRoute(){ if (ui.from && ui.to && ui.route){ ui.routeReq = buildReq(); ui.route = await api.findRoute(ui.routeReq); ui.stale = false; } }
+async function refreshRoute(){ if (ui.from && ui.to && ui.route){ stopPlayback(false); ui.routeReq = buildReq(); ui.route = await api.findRoute(ui.routeReq); ui.stale = false; } }
 
 /* delegated clicks across the page */
 document.addEventListener('click', async ev => {
@@ -1715,6 +1852,8 @@ document.addEventListener('click', async ev => {
   if (ds.role){ setRole(ds.role); return; }
   if (ds.floor){ setFloor(ds.floor); return; }
   if (ds.goto && !t.closest('#map')){ setFloor(ds.goto); return; }
+  if ('playRoute' in ds){ playRoute(); return; }
+  if ('stopPlayback' in ds){ stopPlayback(); return; }
   if (ds.tool){ ui.tool = ui.tool===ds.tool && ds.tool!=='select' ? 'select' : ds.tool; ui.pick = null; ui.wDraft = []; render(); return; }
   if ('wnew' in ds){ ui.wDraft = []; render(); return; }
   if ('wundo' in ds){
@@ -1740,7 +1879,7 @@ document.addEventListener('click', async ev => {
     if (!v) return;
     await api.deleteFloor(fl.id);
     for (const end of ['from','to']) if (ui[end] && !floorById(refPos(ui[end])?.floor)){ ui[end] = null; $('#in-'+end).value = ''; }
-    ui.route = null; ui.selected = null; ui.showAll = null;
+    stopPlayback(false); ui.route = null; ui.selected = null; ui.showAll = null;
     if (!floorById(ui.floor)){ ui.floor = sortedFloors()[0].id; lastPlanKey=''; fit(); }
     render(); toast(`Deleted ${fl.name}.`); return;
   }
@@ -1809,7 +1948,7 @@ document.addEventListener('click', async ev => {
       marker.targetKind===s.kind && marker.targetId===s.id
     );
     if (hasActiveClosure) await syncBackendNodeStatus(s.kind, s.id, false);
-    for (const end of ['from','to']) if (ui[end] && ui[end].kind===s.kind && ui[end].id===s.id) { ui[end]=null; $('#in-'+end).value=''; ui.route=null; }
+    for (const end of ['from','to']) if (ui[end] && ui[end].kind===s.kind && ui[end].id===s.id) { stopPlayback(false); ui[end]=null; $('#in-'+end).value=''; ui.route=null; }
     await api.deleteEntity(s.kind, s.id); ui.selected = null; if (ui.route) await refreshRoute(); render(); toast('Deleted.'); return;
   }
   if ('addtag' in ds){ const inp = $('#add-tag'); const tags = splitTags(inp.value); if (!tags.length) return; const s = ui.selected; const e = getEntity(s.kind,s.id); await api.updateEntity(s.kind, s.id, { tags:[...new Set([...(e.tags||[]), ...tags])] }); render(); return; }
@@ -1851,6 +1990,7 @@ document.addEventListener('click', async ev => {
   if (ds.focus && !ev.target.closest('button')){ const [k,id] = ds.focus.split(':'); goToEntity(k, getEntity(k,id)); return; }
   if ('clearAll' in ds){ ui.showAll = null; render(); return; }
   if ('clearRoute' in ds){
+    stopPlayback(false);
     ui.route = null;
     ui.routeReq = null;
     ui.from = null;

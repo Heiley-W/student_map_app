@@ -162,10 +162,10 @@ class RoutingTests(unittest.TestCase):
                 card_type="staff",
                 wheelchair_required=True,
             )["status"],
-            "no_route",
+            "ok",
         )
 
-    def test_step_free_mode_treats_null_transfer_accessibility_as_accessible(self):
+    def test_step_free_mode_uses_lifts_without_accessibility_flag_filtering(self):
         graph = {
             "nodes": [
                 {"id": "a", "name": "A", "kind": "lift", "page": 1},
@@ -178,7 +178,7 @@ class RoutingTests(unittest.TestCase):
             "to": "b",
             "group": "Lift",
             "kind": "lift",
-            "wheelchair_accessible": None,
+            "wheelchair_accessible": False,
         }
 
         self.assertEqual(
@@ -191,7 +191,7 @@ class RoutingTests(unittest.TestCase):
             )["status"],
             "ok",
         )
-        transfer["wheelchair_accessible"] = False
+        transfer["kind"] = "stairs"
         self.assertEqual(
             find_route(
                 graph,
@@ -202,6 +202,37 @@ class RoutingTests(unittest.TestCase):
             )["status"],
             "no_route",
         )
+
+    def test_step_free_mode_avoids_stair_nodes_not_edge_accessibility_flags(self):
+        graph = {
+            "nodes": [
+                {"id": "a", "name": "A", "kind": "room", "page": 1},
+                {"id": "stairs", "name": "Stairs", "kind": "stairs", "page": 1},
+                {"id": "b", "name": "B", "kind": "room", "page": 1},
+            ],
+            "edges": [
+                {
+                    "from": "a",
+                    "to": "stairs",
+                    "wheelchair_accessible": True,
+                },
+                {
+                    "from": "a",
+                    "to": "b",
+                    "wheelchair_accessible": False,
+                },
+            ],
+        }
+
+        result = find_route(
+            graph,
+            "a",
+            "b",
+            wheelchair_required=True,
+        )
+
+        self.assertEqual(result["status"], "ok")
+        self.assertEqual(result["node_ids"], ["a", "b"])
 
     def test_blocked_and_disconnected_edges_produce_no_route(self):
         graph = {

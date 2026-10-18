@@ -1,6 +1,6 @@
-# Wayfinder routing integration
+# Pythagoras
 
-The UCL Wayfinder HTML uses the graph extracted by `gemini-map/pdf_to_json_map.py` as the routing source of truth. The frontend translates its room and connector selections to graph node IDs, requests a route from FastAPI, and transforms the returned graph coordinates into the HTML map's SVG coordinate system.
+Pythagoras helps people find the most efficient and accessible route to their destination within a building. The frontend uses the graph extracted by `gemini-map/pdf_to_json_map.py` as its routing source of truth. It translates room and connector selections to graph node IDs, requests a route from FastAPI, and transforms the returned graph coordinates into the HTML map's SVG coordinate system.
 
 ## Run the integrated prototype
 
@@ -44,7 +44,7 @@ python sample_run.py
 
 ## Floor and node mapping
 
-The Wayfinder's floor IDs are intentionally not the PDF page numbers:
+Pythagoras floor IDs are intentionally not the PDF page numbers:
 
 | Wayfinder floor | Extracted PDF page |
 | --- | ---: |
@@ -69,7 +69,9 @@ These transforms are calibrated per floor and should be visually checked wheneve
 
 The extractor creates same-floor edges only. `backend/data/floor_transfers.json` supplies explicit cross-floor links between stair/lift landings; these links are added only to routing and are not guessed from coordinates. Verify each connector pair against the building plans before deployment. Override the configuration file with `FLOOR_TRANSFERS_PATH`.
 
-Edges marked `blocked: true` are excluded. When step-free routing is requested, `wheelchair_accessible: false` excludes an edge; `true` and `null` are both treated as accessible. Cross-floor step-free links must be lifts and must not be explicitly marked inaccessible.
+Edges marked `blocked: true` are excluded. When step-free routing is requested, the router avoids all `stairs` and `staircase` nodes and only permits lift transfers. `wheelchair_accessible` edge values do not affect routing.
+
+The route panel's **Play route** control runs a simulated marker along the returned route, updates the active direction, and waits one second at each stair/lift transfer before switching floors. This is a preview only; it does not track a person's live indoor position.
 
 An edge with `requires_id_card: null` is open to every card category, including visitors. If it is `true`, visitors are blocked; student cards are also blocked from 18:00 local time onward, while staff and postgraduate cards remain allowed. The frontend sends the selected card category and its current local time. This self-selected value does not authenticate the user or prove real door access.
 

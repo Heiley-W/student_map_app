@@ -86,7 +86,9 @@ def _build_graph(map_data, wheelchair_required, card_type, local_time, transfers
             continue
         if edge.get("blocked") is True:
             continue
-        if wheelchair_required and edge.get("wheelchair_accessible") is False:
+        if wheelchair_required and (
+            _is_stairs_node(source_node) or _is_stairs_node(target_node)
+        ):
             continue
         if not _card_can_use_edge(edge, card_type, local_time):
             continue
@@ -109,9 +111,7 @@ def _build_graph(map_data, wheelchair_required, card_type, local_time, transfers
         if transfer.get("blocked") is True:
             continue
         kind = transfer["kind"]
-        if wheelchair_required and (
-            kind != "lift" or transfer.get("wheelchair_accessible") is False
-        ):
+        if wheelchair_required and kind != "lift":
             continue
         if not _card_can_use_edge(transfer, card_type, local_time):
             continue
@@ -127,6 +127,10 @@ def _build_graph(map_data, wheelchair_required, card_type, local_time, transfers
         )
 
     return graph
+
+
+def _is_stairs_node(node):
+    return str(node.get("kind", "")).lower() in {"stairs", "staircase"}
 
 
 def _card_can_use_edge(edge, card_type, local_time):
