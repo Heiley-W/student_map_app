@@ -485,6 +485,40 @@ class RoutingApiTests(unittest.TestCase):
 
         self.assertTrue(transfers[0]["blocked"])
 
+    def test_blocked_stairs_or_lift_landing_blocks_connector_on_every_floor(self):
+        for kind, prefix, group in (
+            ("lift", "lift", "Central lift"),
+            ("stairs", "stairs", "West stairs"),
+        ):
+            with self.subTest(kind=kind):
+                map_data = {
+                    "nodes": [
+                        {"id": f"corridor-{floor}", "kind": "corridor", "page": floor}
+                        for floor in range(1, 4)
+                    ] + [
+                        {"id": f"{prefix}-{floor}", "kind": kind, "page": floor}
+                        for floor in range(1, 4)
+                    ],
+                    "edges": [
+                        {"from": f"corridor-{floor}", "to": f"{prefix}-{floor}", "blocked": False}
+                        for floor in range(1, 4)
+                    ],
+                }
+                transfers = [
+                    {
+                        "from": f"{prefix}-{floor}",
+                        "to": f"{prefix}-{floor + 1}",
+                        "kind": kind,
+                        "group": group,
+                    }
+                    for floor in range(1, 3)
+                ]
+
+                main._apply_node_blocks(map_data, transfers, {f"{prefix}-2"})
+
+                self.assertTrue(all(transfer["blocked"] for transfer in transfers))
+                self.assertTrue(all(edge["blocked"] for edge in map_data["edges"]))
+
 
 if __name__ == "__main__":
     unittest.main()
