@@ -229,6 +229,26 @@ body.guided-mode .r-line{stroke-width:9}
 .zoom button{width:38px;height:36px;border:0;background:none;cursor:pointer;font-size:18px;color:var(--ink)}
 .zoom button+button{border-top:1px solid var(--line)}
 .zoom button:hover{background:var(--surface)}
+#outdoor-map{position:absolute;inset:0;z-index:3}
+#outdoor-map[hidden]{display:none}
+.outdoor-map-actions{position:absolute;right:14px;top:14px;z-index:4;display:flex;gap:8px}
+.outdoor-map-actions[hidden]{display:none}
+.entrance-handoff{position:absolute;display:flex;align-items:center;gap:9px;border:0;border-radius:999px;padding:12px 18px;background:#16213E;color:#fff;font:700 17px/1.1 "Atkinson Hyperlegible",-apple-system,"Segoe UI",sans-serif;box-shadow:0 4px 18px rgba(10,20,40,.4);cursor:pointer;white-space:nowrap}
+.entrance-handoff:hover{background:#26385f;transform:scale(1.04)}
+.entrance-handoff:focus-visible{outline:4px solid #F5B700;outline-offset:3px}
+.entrance-handoff .enter-icon{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#F5B700;color:#16213E;font-size:17px}
+.outdoor-setup .key-hint{font-size:13px}
+.mapwrap.outdoor-mode > #map,.mapwrap.outdoor-mode > .floorpanel,.mapwrap.outdoor-mode > .maptop,
+.mapwrap.outdoor-mode > .guided-panel,.mapwrap.outdoor-mode > .card,.mapwrap.outdoor-mode > .empty-floor,
+.mapwrap.outdoor-mode > .banner,.mapwrap.outdoor-mode > .zoom{visibility:hidden}
+.outdoor-setup{display:grid;gap:10px}
+.outdoor-setup[hidden]{display:none}
+.outdoor-setup [hidden]{display:none}
+.outdoor-setup input{width:100%;border:1px solid var(--line);border-radius:8px;background:var(--paper);padding:9px 10px}
+.outdoor-status{margin:0;color:var(--ink-2);font-size:14px}
+.outdoor-status:empty{display:none}
+.outdoor-setup .acts{display:flex;gap:8px;flex-wrap:wrap}
+@media (max-width:860px){.outdoor-map-actions{top:10px;right:10px}.outdoor-map-actions .btn{font-size:12px;padding:6px 8px}}
 
 /* details card */
 .card{position:absolute;right:14px;top:84px;width:330px;max-width:calc(100% - 90px);max-height:calc(100% - 160px);overflow:auto;background:var(--paper);border:1px solid var(--line);border-radius:14px;box-shadow:0 14px 40px rgba(10,20,40,.22);z-index:7}
@@ -345,7 +365,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
         <div class="rail" aria-hidden="true"><span class="dot"></span><span class="bar"></span><span class="pin"></span></div>
         <div class="field" id="f-from">
           <label class="sr" for="in-from">From</label>
-          <input id="in-from" placeholder="From: choose a mapped room or stairs/lift" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="ac-from">
+          <input id="in-from" placeholder="From: room, lift, or outside address" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="ac-from">
           <button class="iconbtn" type="button" data-pick="from" title="Choose start on the map" aria-label="Choose start on the map"><svg width="18" height="18"><use href="#i-pin"/></svg></button>
           <div class="ac" id="ac-from" role="listbox" hidden></div>
         </div>
@@ -363,8 +383,21 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
         <label class="row"><input type="checkbox" class="switch" id="tg-step"> Step-free route (lifts only)</label>
         <label class="row"><input type="checkbox" class="switch" id="tg-guided"> Visually impaired guided mode</label>
         <button class="btn primary wide" id="btn-route" type="button">Find route</button>
-        <p class="hint">Closed mapped rooms and connectors are removed from routes. On card-required edges, visitors are blocked and students are blocked after 6 PM. Step-free routing avoids stairs and uses lifts between floors.</p>
       </div>
+    </div>
+
+    <div class="section outdoor-setup" id="outdoor-demo" hidden>
+      <h2>Outdoor route to the building</h2>
+      <p class="hint">The From field is shared: choose a mapped indoor location or enter an outside address.</p>
+      <label class="lbl" for="outdoor-origin">Outdoor starting point</label>
+      <input id="outdoor-origin" type="text" readonly aria-readonly="true" placeholder="Choose an outdoor address in From">
+      <div class="acts">
+        <button class="btn small" id="outdoor-demo-origin" type="button">Use sample start</button>
+        <button class="btn small" id="outdoor-location" type="button">Use my location</button>
+      </div>
+      <p class="hint key-hint">Google Maps is provided by this demo. If outdoor routing is unavailable, the site administrator needs to configure it.</p>
+      <p class="outdoor-status" id="outdoor-status" role="status" aria-live="polite"></p>
+      <button class="btn primary wide" id="outdoor-continue" type="button" hidden>Enter building and continue indoors</button>
     </div>
 
     <div class="section" id="results" aria-live="polite"></div>
@@ -372,6 +405,10 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
   </aside>
 
   <main class="mapwrap" id="mapwrap" aria-label="Floor map">
+    <div id="outdoor-map" aria-label="Outdoor walking route" hidden></div>
+    <div class="outdoor-map-actions" id="outdoor-map-actions" hidden>
+      <button class="btn" id="outdoor-map-close" type="button">Back to indoor map</button>
+    </div>
     <svg id="map" viewBox="-135 145 1611 555" role="img" aria-label="Floor plan">
       <g id="lyr-plan"></g>
       <g id="lyr-zones"></g>
@@ -655,6 +692,8 @@ FLOORS = data.floors;
 const ROUTE_API_BASE = new URLSearchParams(location.search).get('api') || 'http://localhost:8000';
 let routeConfigPromise = null;
 let routeCatalogPromise = null;
+let googleMapsPromise = null;
+const outdoorDemo = { origin:null, candidate:null, map:null, routePolyline:null, routeOutline:null, originMarker:null, enterOverlay:null, entranceMarkers:[], config:null };
 
 async function loadRouteConfig(){
   if (!routeConfigPromise){
@@ -682,6 +721,9 @@ async function loadRouteCatalog(){
 }
 function routeNodeFor(ref, config){
   if (!ref || !ref.id) return null;
+  if (ref.kind==='outdoorEntrance'){
+    return config.outdoorEntrances?.find(entrance => entrance.id===ref.id)?.nodeId || null;
+  }
   const entity = getEntity(ref.kind, ref.id);
   if (!entity) return null;
   if (ref.kind==='room') return config.rooms[entity.floor]?.[entity.name] || null;
@@ -733,7 +775,7 @@ const api = {
     const start = routeNodeFor(req.from, config), destination = routeNodeFor(req.to, config);
     if (!start || !destination){
       const ref = !start ? req.from : req.to;
-      return { status:'error', message:`${ref?.label || 'This location'} has no verified route-node mapping yet. Choose a mapped room or staircase/lift.` };
+      return { status:'error', message:`${ref?.label || 'This location'} has no verified route-node mapping yet. Choose a mapped room, lab, entrance, or staircase/lift.` };
     }
     if (!catalog.has(start) || !catalog.has(destination)){
       return { status:'error', message:'A selected place is mapped to a node that is not in the backend map. Refresh the route mapping.' };
@@ -796,6 +838,254 @@ const api = {
     saveData();
   },
 };
+
+function loadGoogleMaps(){
+  if (window.google?.maps) return Promise.resolve(window.google.maps);
+  if (!googleMapsPromise){
+    googleMapsPromise=(async()=>{
+      const response=await fetch(`${ROUTE_API_BASE}/config`);
+      const config=await response.json();
+      if (response.status===404) throw new Error('This backend does not provide demo configuration yet. Restart or redeploy the updated backend, then have the site administrator configure GOOGLE_MAPS_API_KEY.');
+      if (!response.ok) throw new Error(config.detail||`Demo configuration request failed (${response.status}).`);
+      const key=config.google_maps_api_key?.trim();
+      if (!key) throw new Error('Outdoor Google Maps is not configured for this demo. Indoor routing remains available; ask the site administrator to configure the Maps key.');
+      return new Promise((resolve,reject)=>{
+        const callback=`__pythagorasMapsReady_${Date.now()}`;
+        const timer=setTimeout(()=>{
+          delete window[callback];
+          reject(new Error('Google Maps did not finish loading. The site administrator should check the key, enabled APIs, billing, and referrer restrictions.'));
+        },15000);
+        window[callback]=()=>{ clearTimeout(timer); delete window[callback]; resolve(window.google.maps); };
+        const script=document.createElement('script');
+        script.src=`https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(key)}&v=weekly&callback=${callback}`;
+        script.async=true;
+        script.onerror=()=>{ clearTimeout(timer); delete window[callback]; reject(new Error('Google Maps failed to load. The site administrator should check the key, enabled APIs, billing, and website referrer restrictions.')); };
+        document.head.append(script);
+      });
+    })().catch(error=>{ googleMapsPromise=null; throw error; });
+  }
+  return googleMapsPromise;
+}
+function setOutdoorStatus(message){
+  $('#outdoor-status').textContent=message;
+}
+function clearOutdoorRoute(message=''){
+  outdoorDemo.candidate=null;
+  $('#outdoor-continue').hidden=true;
+  if (outdoorDemo.routePolyline){ outdoorDemo.routePolyline.setMap(null); outdoorDemo.routePolyline=null; }
+  if (outdoorDemo.routeOutline){ outdoorDemo.routeOutline.setMap(null); outdoorDemo.routeOutline=null; }
+  if (outdoorDemo.originMarker){ outdoorDemo.originMarker.setMap(null); outdoorDemo.originMarker=null; }
+  if (outdoorDemo.enterOverlay){ outdoorDemo.enterOverlay.setMap(null); outdoorDemo.enterOverlay=null; }
+  if (message) setOutdoorStatus(message);
+}
+async function openOutdoorDemo(){
+  if (!ui.to){ toast('Choose an indoor destination before starting an outdoor route.'); $('#in-to').focus(); return; }
+  if (ui.from?.kind==='externalOrigin') outdoorDemo.origin=ui.from.origin;
+  $('#outdoor-demo').hidden=false;
+  $('#outdoor-map').hidden=false;
+  $('#outdoor-map-actions').hidden=false;
+  $('#mapwrap').classList.add('outdoor-mode');
+  try {
+    const config=await loadRouteConfig();
+    outdoorDemo.config=config;
+    await initializeOutdoorMap(config);
+  } catch(error) {
+    setOutdoorStatus(error.message);
+  }
+}
+function closeOutdoorDemo(){
+  $('#outdoor-demo').hidden=true;
+  $('#outdoor-map').hidden=true;
+  $('#outdoor-map-actions').hidden=true;
+  $('#mapwrap').classList.remove('outdoor-mode');
+  if (outdoorDemo.enterOverlay){ outdoorDemo.enterOverlay.setMap(null); outdoorDemo.enterOverlay=null; }
+}
+async function initializeOutdoorMap(config){
+  const maps=await loadGoogleMaps();
+  const {Map}=await maps.importLibrary('maps');
+  const validEntrances=(config.outdoorEntrances||[]).filter(entrance =>
+    Number.isFinite(entrance.latitude) && Number.isFinite(entrance.longitude));
+  const first=validEntrances[0];
+  const center=first
+    ? {lat:first.latitude,lng:first.longitude}
+    : outdoorDemo.origin?.location || {lat:51.5235,lng:-0.1335};
+  if (!outdoorDemo.map){
+    outdoorDemo.map=new Map($('#outdoor-map'),{center,zoom:16,mapTypeControl:false,streetViewControl:false});
+  } else {
+    outdoorDemo.map.setCenter(center);
+  }
+  $('#outdoor-origin').value=outdoorDemo.origin?.label||'';
+  renderEntranceMarkers(config);
+}
+function renderEntranceMarkers(config){
+  if (!outdoorDemo.map || !window.google?.maps) return;
+  outdoorDemo.entranceMarkers.forEach(marker=>marker.setMap(null));
+  outdoorDemo.entranceMarkers=[];
+  for (const entrance of config.outdoorEntrances||[]){
+    if (!Number.isFinite(entrance.latitude)||!Number.isFinite(entrance.longitude)) continue;
+    outdoorDemo.entranceMarkers.push(new google.maps.Marker({
+      map:outdoorDemo.map,
+      position:{lat:entrance.latitude,lng:entrance.longitude},
+      title:entrance.name,
+      label:'E',
+    }));
+  }
+}
+function showEntranceHandoff(entrance){
+  if (!outdoorDemo.map || !window.google?.maps?.OverlayView) return;
+  if (outdoorDemo.enterOverlay) outdoorDemo.enterOverlay.setMap(null);
+  class EntranceHandoff extends google.maps.OverlayView{
+    onAdd(){
+      this.element=document.createElement('button');
+      this.element.type='button';
+      this.element.className='entrance-handoff';
+      this.element.setAttribute('aria-label',`Enter the building at ${entrance.name} and continue indoors`);
+      this.element.innerHTML='<span class="enter-icon" aria-hidden="true">▶</span><span>Enter building</span>';
+      this.element.addEventListener('click',continueIndoors);
+      this.getPanes().floatPane.append(this.element);
+    }
+    draw(){
+      const point=this.getProjection().fromLatLngToDivPixel(
+        new google.maps.LatLng(entrance.latitude,entrance.longitude));
+      if (point) this.element.style.transform=`translate(${point.x}px,${point.y}px) translate(-50%,-135%)`;
+    }
+    onRemove(){ this.element?.remove(); }
+  }
+  outdoorDemo.enterOverlay=new EntranceHandoff();
+  outdoorDemo.enterOverlay.setMap(outdoorDemo.map);
+}
+function outdoorOriginFromLocation(){
+  if (!navigator.geolocation){ setOutdoorStatus('This browser does not provide location. Search for an address instead.'); return; }
+  setOutdoorStatus('Getting your location…');
+  navigator.geolocation.getCurrentPosition(position=>{
+    outdoorDemo.origin={location:{lat:position.coords.latitude,lng:position.coords.longitude},label:'Your current location'};
+    setExternalOrigin(outdoorDemo.origin);
+    if (outdoorDemo.map) outdoorDemo.map.setCenter(outdoorDemo.origin.location);
+    if (!ui.to) setOutdoorStatus('Using your current location as the start.');
+  },error=>{
+    const message=error.code===error.PERMISSION_DENIED?'Location permission was denied. Search for an address instead.':
+      error.code===error.POSITION_UNAVAILABLE?'Your location is unavailable. Search for an address instead.':
+      'Location lookup timed out. Search for an address instead.';
+    setOutdoorStatus(message);
+  },{enableHighAccuracy:true,timeout:10000,maximumAge:30000});
+}
+async function findOutdoorRoute(){
+  if (!ui.to){ setOutdoorStatus('Choose an indoor destination first.'); return; }
+  if (!outdoorDemo.origin && ui.from?.kind==='externalOrigin') outdoorDemo.origin=ui.from.origin;
+  if (!outdoorDemo.origin){ setOutdoorStatus('Enter an outdoor address in From, use the sample start, or use your current location.'); $('#in-from').focus(); return; }
+  const config=outdoorDemo.config||await loadRouteConfig();
+  const entrances=(config.outdoorEntrances||[]).filter(entrance=>
+    Number.isFinite(entrance.latitude)&&Number.isFinite(entrance.longitude)&&entrance.nodeId);
+  if (!entrances.length){
+    setOutdoorStatus('No entrance coordinates are configured yet. Add the entrance latitude and longitude to frontend/route-node-map.json.');
+    return;
+  }
+  const request=buildReq();
+  const origin=outdoorDemo.origin.query||outdoorDemo.origin.location;
+  clearOutdoorRoute();
+  setOutdoorStatus('Checking which entrance connects to your indoor destination…');
+  const checked=await Promise.all(entrances.map(async entrance=>{
+    try {
+      if (entrance.allowedCardTypes && !entrance.allowedCardTypes.includes(request.access)) return null;
+      const indoor=await api.findRoute({
+        ...request,
+        from:{kind:'outdoorEntrance',id:entrance.id,label:entrance.name},
+      });
+      if (indoor.status!=='ok') return {entrance,unavailable:indoor.message||'No indoor route from this entrance.'};
+      return {entrance,indoor};
+    } catch(error) {
+      return {entrance,unavailable:error.message};
+    }
+  }));
+  const indoorCandidates=checked.filter(item=>item?.indoor);
+  if (!indoorCandidates.length){
+    const issues=checked.filter(Boolean).map(item=>`${item.entrance.name}: ${item.unavailable}`).join(' ');
+    setOutdoorStatus(`No usable entrance was found. ${issues}`);
+    return;
+  }
+  const maps=await loadGoogleMaps();
+  const {Route}=await maps.importLibrary('routes');
+  const routed=await Promise.all(indoorCandidates.map(async item=>{
+    try {
+      const response=await Route.computeRoutes({
+        origin,
+        destination:{lat:item.entrance.latitude,lng:item.entrance.longitude},
+        travelMode:'WALKING',
+        fields:['path','durationMillis','distanceMeters','viewport'],
+      });
+      const route=response.routes?.[0];
+      if (!route) return {...item,unavailable:'Google Maps found no walking route to this entrance.'};
+      return {...item,route};
+    } catch(error) {
+      return {...item,unavailable:error.message};
+    }
+  }));
+  const candidates=routed.filter(item=>item.route);
+  if (!candidates.length){
+    const issues=routed.map(item=>`${item.entrance.name}: ${item.unavailable}`).join(' ');
+    setOutdoorStatus(`No usable entrance was found. ${issues}`);
+    return;
+  }
+  candidates.sort((a,b)=>(a.route.durationMillis??Infinity)-(b.route.durationMillis??Infinity)||
+    a.indoor.node_ids.length-b.indoor.node_ids.length);
+  const best=candidates[0];
+  outdoorDemo.candidate={...best,origin:outdoorDemo.origin,destination:ui.to,stepFree:ui.stepFree,access:ui.card};
+  if (outdoorDemo.routePolyline) outdoorDemo.routePolyline.setMap(null);
+  if (outdoorDemo.originMarker) outdoorDemo.originMarker.setMap(null);
+  outdoorDemo.routeOutline=new google.maps.Polyline({
+    map:outdoorDemo.map,
+    path:best.route.path,
+    strokeColor:'#FFFFFF',
+    strokeOpacity:0.95,
+    strokeWeight:12,
+    zIndex:1,
+  });
+  outdoorDemo.routePolyline=new google.maps.Polyline({
+    map:outdoorDemo.map,
+    path:best.route.path,
+    strokeColor:'#1769AA',
+    strokeOpacity:0.9,
+    strokeWeight:7,
+    zIndex:2,
+    icons:[{
+      icon:{path:google.maps.SymbolPath.FORWARD_CLOSED_ARROW,scale:3,fillColor:'#FFFFFF',fillOpacity:1,strokeColor:'#1769AA',strokeWeight:1},
+      offset:'50%',
+      repeat:'110px',
+    }],
+  });
+  const originPosition=best.route.path?.[0];
+  if (originPosition) outdoorDemo.originMarker=new google.maps.Marker({
+    map:outdoorDemo.map,
+    position:originPosition,
+    title:outdoorDemo.origin.label,
+    label:'S',
+  });
+  if (best.route.viewport) outdoorDemo.map.fitBounds(best.route.viewport);
+  showEntranceHandoff(best.entrance);
+  const minutes=best.route.durationMillis!=null?`${Math.max(1,Math.round(best.route.durationMillis/60000))} min walk`:
+    best.route.distanceMeters!=null?`${Math.round(best.route.distanceMeters)} m walk`:'walking route found';
+  setOutdoorStatus(`Best option: ${best.entrance.name} · ${minutes}. This entrance has an indoor route to ${ui.to.label}.`);
+  $('#outdoor-continue').textContent=`Enter at ${best.entrance.name} and continue indoors`;
+  $('#outdoor-continue').hidden=false;
+}
+async function continueIndoors(){
+  const candidate=outdoorDemo.candidate;
+  if (!candidate){ setOutdoorStatus('Find an outdoor route before continuing indoors.'); return; }
+  if (candidate.destination!==ui.to||candidate.stepFree!==ui.stepFree||candidate.access!==ui.card){
+    setOutdoorStatus('Your destination or route preferences changed. Find the entrance route again.');
+    clearOutdoorRoute();
+    return;
+  }
+  closeOutdoorDemo();
+  ui.from={kind:'outdoorEntrance',id:candidate.entrance.id,label:`${candidate.entrance.name} (outside)`,floor:'E'};
+  $('#in-from').value=ui.from.label;
+  ui.route=candidate.indoor;
+  ui.routeReq=buildReq();
+  ui.guidedStepIndex=0;
+  switchFloor(ui.route.segments[0].floor);
+  fit();
+  render();
+}
 
 async function syncBackendNodeStatus(kind, id, outOfOrder){
   const entity = getEntity(kind, id);
@@ -1052,6 +1342,21 @@ function glyphFor(kind, e){
 }
 
 /* ---------------- autocomplete ---------------- */
+function setExternalOrigin(origin){
+  stopPlayback(false);
+  ui.from={kind:'externalOrigin',id:'outside-start',label:origin.label,origin};
+  ui.route=null;
+  ui.routeReq=null;
+  ui.stale=false;
+  ui.showAll=null;
+  outdoorDemo.origin=origin;
+  $('#in-from').value=origin.label;
+  $('#outdoor-origin').value=origin.label;
+  clearOutdoorRoute(`Outdoor start set to ${origin.label}.`);
+  render();
+  if (ui.to) findRoute();
+}
+function chooseExternalOrigin(query){ setExternalOrigin({query,label:query}); }
 function setupAC(end){
   const input = $('#in-'+end), box = $('#ac-'+end);
   let opts = [], active = -1;
@@ -1059,6 +1364,12 @@ function setupAC(end){
   const open = () => {
     const { groups, items } = search(input.value);
     opts = [...groups.map(gp => ({ type:'all', gp })), ...items.map(it => ({ type:'item', it }))];
+    if (end==='from' && input.value.trim() && !opts.length){
+      opts=[{type:'external',query:input.value.trim()}];
+      box.innerHTML=`<div class="ac-item" role="option" id="ac-${end}-0" data-i="0"><span class="glyph">${icon('i-pin')}</span><span class="nm">Use as an outdoor starting point: ${esc(input.value.trim())}</span></div>`;
+      box.hidden=false; input.setAttribute('aria-expanded','true'); active=-1;
+      return;
+    }
     if (!opts.length){ box.innerHTML = input.value.trim() ? `<div class="ac-item" aria-disabled="true"><span class="nm sub">No rooms or facilities match “${esc(input.value)}”.</span></div>` : ''; box.hidden = !input.value.trim(); return; }
     box.innerHTML = opts.map((o,i) => {
       if (o.type==='all') return `<div class="ac-item all" role="option" id="ac-${end}-${i}" data-i="${i}"><span class="glyph">${icon(o.gp.icon)}</span><span class="nm">${esc(o.gp.label)}</span><span class="sub">${o.gp.items.length}</span></div>`;
@@ -1070,17 +1381,27 @@ function setupAC(end){
   };
   const choose = i => {
     const o = opts[i]; if (!o) return; close();
+    if (o.type==='external'){ chooseExternalOrigin(o.query); return; }
     if (o.type==='all'){ input.value = ''; showAll(o.gp, end); return; }
     const e = getEntity(o.it.kind, o.it.id);
     setEndpoint(end, placeRef(o.it.kind, e));
     goToEntity(o.it.kind, e, false);
   };
-  input.addEventListener('input', () => { ui[end] = null; markStale(); open(); });
+  input.addEventListener('input', () => {
+    ui[end] = null;
+    if (end==='from'){
+      outdoorDemo.origin=null;
+      $('#outdoor-origin').value='';
+      clearOutdoorRoute();
+    }
+    markStale();
+    open();
+  });
   input.addEventListener('focus', () => { if (input.value && !ui[end]) open(); });
   input.addEventListener('blur', () => setTimeout(close, 150));
   input.addEventListener('keydown', ev => {
     if (ev.key==='ArrowDown' || ev.key==='ArrowUp'){ if (box.hidden) open(); ev.preventDefault(); active = clamp(active + (ev.key==='ArrowDown'?1:-1), 0, opts.length-1); [...box.children].forEach((c,i)=>c.setAttribute('aria-selected', i===active)); input.setAttribute('aria-activedescendant', `ac-${end}-${active}`); box.children[active]?.scrollIntoView({block:'nearest'}); }
-    else if (ev.key==='Enter'){ ev.preventDefault(); if (!box.hidden && opts.length) choose(active<0?0:active); else if (ui.from && ui.to) findRoute(); }
+    else if (ev.key==='Enter'){ ev.preventDefault(); if (!box.hidden && opts.length) choose(active<0?0:active); else if (end==='from' && input.value.trim()) chooseExternalOrigin(input.value.trim()); else if (ui.from && ui.to) findRoute(); }
     else if (ev.key==='Escape') close();
   });
   box.addEventListener('mousedown', ev => { const it = ev.target.closest('[data-i]'); if (it){ ev.preventDefault(); choose(+it.dataset.i); } });
@@ -1089,6 +1410,10 @@ function setupAC(end){
 function setEndpoint(end, ref){
   ui[end] = ref;
   $('#in-'+end).value = ref ? ref.label : '';
+  if (end==='to') {
+    clearOutdoorRoute();
+    setOutdoorStatus('Destination changed. Find the outdoor route again.');
+  }
   markStale();
   if (ui.from && ui.to) findRoute();
   else render();
@@ -1111,6 +1436,15 @@ function buildReq(){
 }
 async function findRoute(){
   if (!ui.from || !ui.to){ toast(ui.from ? 'Choose a destination first.' : 'Choose a starting point first.'); (ui.from ? $('#in-to') : $('#in-from')).focus(); return; }
+  if (ui.from.kind==='externalOrigin'){
+    try {
+      await openOutdoorDemo();
+      await findOutdoorRoute();
+    } catch(error) {
+      setOutdoorStatus(`Could not plan the outdoor leg: ${error.message}`);
+    }
+    return;
+  }
   stopPlayback(false);
   ui.routeReq = buildReq();
   ui.route = { status:'loading' };
@@ -2183,6 +2517,7 @@ document.addEventListener('click', async ev => {
   if ('clearRoute' in ds){
     stopPlayback(false);
     await disconnectArduino();
+    clearOutdoorRoute();
     ui.route = null;
     ui.routeReq = null;
     ui.from = null;
@@ -2228,6 +2563,19 @@ $('#z-in').onclick = () => zoomAt({ x:ui.vb.x+ui.vb.w/2, y:ui.vb.y+ui.vb.h/2 }, 
 $('#z-out').onclick = () => zoomAt({ x:ui.vb.x+ui.vb.w/2, y:ui.vb.y+ui.vb.h/2 }, 1/0.75);
 $('#z-fit').onclick = fit;
 $('#btn-route').onclick = () => { ui.avoidIds=[]; ui.keptIds=[]; findRoute(); };
+$('#outdoor-map-close').onclick = closeOutdoorDemo;
+$('#outdoor-location').onclick = outdoorOriginFromLocation;
+$('#outdoor-demo-origin').onclick = async()=>{
+  try {
+    const config=outdoorDemo.config||await loadRouteConfig();
+    if (!config.demoOriginQuery){ setOutdoorStatus('No sample starting place is configured. Search an address instead.'); return; }
+    setExternalOrigin({query:config.demoOriginQuery,label:`Demo start: ${config.demoOriginQuery}`});
+    clearOutdoorRoute();
+    setOutdoorStatus(`Using sample start: ${config.demoOriginQuery}.`);
+  } catch(error) { setOutdoorStatus(error.message); }
+};
+$('#outdoor-continue').onclick = continueIndoors;
+$('#in-to').addEventListener('input',()=>clearOutdoorRoute('Destination changed. Find the outdoor route again.'));
 $('#swap').onclick = () => { [ui.from, ui.to] = [ui.to, ui.from]; $('#in-from').value = ui.from?.label ?? ''; $('#in-to').value = ui.to?.label ?? ''; if (ui.from && ui.to) findRoute(); else render(); };
 $('#sel-card').innerHTML = CARDS.map(c => `<option value="${c.id}">${esc(c.label)}</option>`).join('');
 $('#sel-card').onchange = e => { ui.card = e.target.value; prefsChanged(); };
@@ -2239,7 +2587,13 @@ $('#tg-guided').onchange = async e => {
   if(!ui.guidedMode) await disconnectArduino();
   render();
 };
-function prefsChanged(){ if (ui.route && ui.from && ui.to) findRoute(); else render(); }
+function prefsChanged(){
+  if (ui.from?.kind==='externalOrigin'){
+    clearOutdoorRoute('Route preferences changed. Find the outdoor route again.');
+    render();
+  } else if (ui.route && ui.from && ui.to) findRoute();
+  else render();
+}
 
 /* ---------------- dialog form helper ---------------- */
 function form({ title, desc='', submit='Save', fields=[], danger=false }){

@@ -37,6 +37,26 @@ class RoutingTests(unittest.TestCase):
         self.assertEqual(result["floor_changes"], 0)
         self.assertTrue(all(point["page"] == 1 for point in result["points"]))
 
+    def test_public_config_exposes_only_the_maps_browser_key(self):
+        client = TestClient(main.app)
+        with patch.dict(main.os.environ, {"GOOGLE_MAPS_API_KEY": "restricted-browser-key"}):
+            response = client.get("/config")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {"google_maps_api_key": "restricted-browser-key"},
+        )
+
+    def test_public_config_reports_missing_maps_key_as_unconfigured(self):
+        client = TestClient(main.app)
+        with patch.dict(main.os.environ):
+            main.os.environ.pop("GOOGLE_MAPS_API_KEY", None)
+            response = client.get("/config")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json(), {"google_maps_api_key": ""})
+
     def test_cross_floor_route_uses_explicit_transfer(self):
         result = find_route(
             self.map_data,
@@ -125,6 +145,36 @@ class RoutingTests(unittest.TestCase):
                 ("p004_third_floor_room_lab_3", "p004_third_floor_corr_east_stairs_junc"),
             },
         )
+
+    def test_outdoor_entrances_map_to_routable_ground_floor_nodes(self):
+        config = json.loads(NODE_MAP_PATH.read_text(encoding="utf-8"))
+        nodes_by_id = {node["id"]: node for node in self.map_data["nodes"]}
+
+        self.assertTrue(config["outdoorEntrances"])
+        for entrance in config["outdoorEntrances"]:
+            with self.subTest(entrance=entrance["id"]):
+                node = nodes_by_id[entrance["nodeId"]]
+                self.assertEqual(node["floor"], "Ground floor")
+                self.assertIsInstance(entrance["latitude"], float)
+                self.assertIsInstance(entrance["longitude"], float)
+                self.assertGreaterEqual(entrance["latitude"], -90)
+                self.assertLessEqual(entrance["latitude"], 90)
+                self.assertGreaterEqual(entrance["longitude"], -180)
+                self.assertLessEqual(entrance["longitude"], 180)
+                self.assertEqual(
+                    find_route(
+                        self.map_data,
+                        entrance["nodeId"],
+                        "p005_fourth_floor_room_a14",
+                        transfers=self.transfers,
+                    )["status"],
+                    "ok",
+                )
+        qdt_entrance = next(
+            entrance for entrance in config["outdoorEntrances"]
+            if entrance["id"] == "qdt-side-entrance"
+        )
+        self.assertEqual(qdt_entrance["allowedCardTypes"], ["staff", "postgrad"])
 
     def test_transfer_endpoints_exist_in_graph(self):
         for transfer in self.transfers:

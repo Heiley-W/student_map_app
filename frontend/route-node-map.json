@@ -117,6 +117,31 @@
       "Lab 3": "p004_third_floor_room_lab_3"
     }
   },
+  "outdoorEntrances": [
+    {
+      "id": "east-ground-floor-entrance",
+      "name": "East entrance",
+      "latitude": 51.525211347544165,
+      "longitude": -0.13377584224039707,
+      "nodeId": "p001_ground_floor_door_exit_east"
+    },
+    {
+      "id": "lift-side-entrance",
+      "name": "Lift-side entrance",
+      "latitude": 51.5254016923619,
+      "longitude": -0.13344461925910714,
+      "nodeId": "p001_ground_floor_lift_unlabelled"
+    },
+    {
+      "id": "qdt-side-entrance",
+      "name": "QDT entrance",
+      "latitude": 51.52554493883179,
+      "longitude": -0.13307721783151324,
+      "nodeId": "p001_ground_floor_room_qdt",
+      "allowedCardTypes": ["staff", "postgrad"]
+    }
+  ],
+  "demoOriginQuery": "Euston Square Underground Station, London, UK",
   "transforms": {
     "E": { "x": [14.6287, -1.6835], "y": [7.9961, 9.2718] },
     "D": { "x": [14.5417, 1.0404], "y": [8.1273, 4.9524] },

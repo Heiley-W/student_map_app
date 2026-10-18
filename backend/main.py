@@ -9,10 +9,13 @@ from typing import Literal
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from dotenv import load_dotenv
 from pydantic import BaseModel, Field
 
 from routing import find_route
 
+
+load_dotenv(Path(__file__).resolve().parent / ".env")
 
 app = FastAPI(title="Indoor Wayfinder Routing API", version="1.1.0")
 
@@ -222,6 +225,13 @@ def _map_catalog(map_data):
 @app.get("/health")
 def health():
     return {"status": "ok"}
+
+
+@app.get("/config")
+def get_public_config():
+    return {
+        "google_maps_api_key": os.getenv("GOOGLE_MAPS_API_KEY", ""),
+    }
 
 
 @app.get("/map")
