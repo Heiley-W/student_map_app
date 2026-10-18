@@ -170,6 +170,7 @@ button,input,select,textarea{font:inherit;color:inherit}
 .r-chev{fill:none;stroke:#FFC83D;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .play-marker-halo{fill:rgba(245,183,0,.3);stroke:#16213E;stroke-width:2}
 .play-marker-dot{fill:#F5B700;stroke:#fff;stroke-width:3}
+.guided-marker{fill:#F5B700;stroke:#16213E;stroke-width:4}
 .badge-t{cursor:pointer}
 .badge-t rect{fill:#F5B700;stroke:#16213E;stroke-width:2}
 .badge-t text{font-size:17px;font-weight:700;fill:#16213E}
@@ -209,6 +210,20 @@ button,input,select,textarea{font:inherit;color:inherit}
 .banner.playback .playback-copy span,.banner.playback .playback-copy small{display:block}
 .banner.playback .playback-copy small{opacity:.75;margin-top:3px}
 .banner.playback button{flex:0 0 auto}
+.guided-panel{position:absolute;top:82px;right:14px;width:min(390px,calc(100% - 90px));padding:18px;background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:0 10px 28px rgba(10,20,40,.25);z-index:8}
+.guided-panel[hidden]{display:none}
+.guided-panel h2{margin:0 0 6px;font-size:16px}
+.guided-panel .guided-instruction{font-size:24px;line-height:1.25;font-weight:700;margin:0 0 6px}
+.guided-panel .guided-floor{font-size:18px;margin:0 0 12px}
+.guided-panel .guided-status{font-size:14px;color:var(--muted);margin:0 0 12px}
+.guided-panel .guided-actions{display:grid;gap:8px}
+.guided-panel button{min-height:52px;border:2px solid var(--ink);border-radius:10px;padding:10px 14px;background:var(--ink);color:var(--paper);font-size:18px;font-weight:700;cursor:pointer}
+.guided-panel button.secondary{background:var(--paper);color:var(--ink);font-size:15px;min-height:44px}
+.guided-panel button:disabled{opacity:.55;cursor:default}
+body.guided-mode .steps li{font-size:18px;padding:12px 8px}
+body.guided-mode .steps .sm{font-size:15px}
+body.guided-mode .r-line{stroke-width:9}
+@media (max-width:860px){.guided-panel{top:72px;right:10px;width:min(390px,calc(100% - 74px));padding:14px}.guided-panel .guided-instruction{font-size:21px}}
 .banner.tip{background:var(--paper);color:var(--ink);border:1px solid var(--line)}
 .zoom{position:absolute;right:14px;bottom:14px;display:flex;flex-direction:column;background:var(--paper);border:1px solid var(--line);border-radius:12px;overflow:hidden;z-index:5;box-shadow:0 4px 14px rgba(10,20,40,.10)}
 .zoom button{width:38px;height:36px;border:0;background:none;cursor:pointer;font-size:18px;color:var(--ink)}
@@ -346,6 +361,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
       <div class="prefs">
         <div><label class="lbl" for="sel-card">Your card</label><select id="sel-card"></select></div>
         <label class="row"><input type="checkbox" class="switch" id="tg-step"> Step-free route (lifts only)</label>
+        <label class="row"><input type="checkbox" class="switch" id="tg-guided"> Visually impaired guided mode</label>
         <button class="btn primary wide" id="btn-route" type="button">Find route</button>
         <p class="hint">Closed mapped rooms and connectors are removed from routes. On card-required edges, visitors are blocked and students are blocked after 6 PM. Step-free routing avoids stairs and uses lifts between floors.</p>
       </div>
@@ -381,6 +397,7 @@ label.btn:focus-within{outline:3px solid var(--focus);outline-offset:2px}
       <div class="tools" id="tools" role="toolbar" aria-label="Map tools"></div>
     </div>
 
+    <section class="guided-panel" id="guided-controls" aria-label="Guided navigation" hidden></section>
     <div class="card" id="card" hidden></div>
     <div class="empty-floor" id="empty-floor" hidden></div>
     <div class="banner" id="banner" hidden></div>
@@ -991,6 +1008,7 @@ const ui = {
   card:'student', stepFree:false, avoidAll:false, when:toLocalInput(new Date()),
   avoidIds:[], keptIds:[],
   route:null, routeReq:null, stale:false, playback:null,
+  guidedMode:false, guidedStepIndex:0, arduino:null,
   showAll:null,                // {query,label,items:[{kind,id}], dist?:Map}
   pick:null,                   // 'from'|'to' while choosing on map
   wDraft:[],                   // points of the walkway being drawn
@@ -1102,7 +1120,10 @@ async function findRoute(){
     ui.route = { status:'error', message:`Could not calculate this route: ${error.message}` };
   }
   ui.stale = false; ui.showAll = null; ui.selected = null;
-  if (ui.route.status==='ok'){ switchFloor(ui.route.segments[0].floor); fit(); }
+  if (ui.route.status==='ok'){
+    ui.guidedStepIndex=0;
+    switchFloor(ui.route.segments[0].floor); fit();
+  }
   render();
 }
 
@@ -1114,7 +1135,7 @@ let lastPlanKey = '';
 const MAP_ACCEPT = 'image/svg+xml,image/png,image/jpeg,image/webp,.svg';
 function applyVB(){ const v=ui.vb; svg.setAttribute('viewBox', `${v.x} ${v.y} ${v.w} ${v.h}`); }
 
-function render(){ renderBuildings(); renderMap(); renderFloors(); renderTools(); renderResults(); renderAdmin(); renderCard(); renderBanner(); }
+function render(){ renderBuildings(); renderMap(); renderFloors(); renderTools(); renderResults(); renderAdmin(); renderCard(); renderBanner(); renderGuidedControls(); }
 
 function renderMap(){
   const f = ui.floor, now = ui.when;
@@ -1210,8 +1231,9 @@ function renderMap(){
   let rt = '', pins = '';
   const route = ui.route && ui.route.status==='ok' ? ui.route : null;
   if (route){
+    const presentation=routePresentation(route);
     route.segments.forEach((sg, si) => {
-      if (sg.floor !== f) return;
+      if (!presentation.visible.has(si) || sg.floor !== f) return;
       const pts = sg.points.map(p => p.join(',')).join(' ');
       rt += `<polyline class="r-case" points="${pts}"/><polyline class="r-line" points="${pts}"/>`;
       for (const c of chevrons(sg.points, 46)) rt += `<path class="r-chev" d="M-3.5,-4 L1.5,0 L-3.5,4" transform="translate(${c.x} ${c.y}) rotate(${c.a})"/>`;
@@ -1220,11 +1242,15 @@ function renderMap(){
       if (si===route.segments.length-1) pins += destPin(last);
       if (sg.exit){
         const groupName = data.groups[sg.exit.group]?.name ?? sg.exit.group;
-        const txt = `${sg.exit.dir==='up'?'▲':'▼'} ${groupName} to ${floorName(sg.exit.toFloor)}`;
-        pins += badge(last, txt, 'badge-t', `data-goto="${sg.exit.toFloor}"`);
+        const targetIndex=presentation.transferTargets.get(si) ?? si+1;
+        const targetFloor=route.segments[targetIndex]?.floor ?? sg.exit.toFloor;
+        const txt = `${sg.exit.dir==='up'?'▲':'▼'} ${groupName} to ${floorName(targetFloor)}`;
+        pins += badge(last, txt, 'badge-t', `data-goto="${targetFloor}"`);
       }
       if (sg.entry){
-        pins += badge(first, `From ${floorName(sg.entry.fromFloor)}`, 'badge-in', `data-goto="${sg.entry.fromFloor}"`);
+        const originIndex=presentation.entryOrigins.get(si);
+        const originFloor=originIndex==null ? sg.entry.fromFloor : route.segments[originIndex].floor;
+        pins += badge(first, `From ${floorName(originFloor)}`, 'badge-in', `data-goto="${originFloor}"`);
       }
     });
     const playback = ui.playback;
@@ -1233,6 +1259,13 @@ function renderMap(){
       if (segment.floor === f){
         const [x,y] = pointAlong(segment.points, playback.progress);
         pins += `<g class="play-marker" transform="translate(${x} ${y})" pointer-events="none" aria-label="Simulated current position"><circle class="play-marker-halo" r="17"/><circle class="play-marker-dot" r="9"/></g>`;
+      }
+    }
+    if (ui.guidedMode){
+      const steps=buildSteps(route), step=steps[ui.guidedStepIndex], segment=step && route.segments[step.segmentIndex];
+      if (segment?.floor===f){
+        const point=guidedStepPosition(step,segment);
+        if (point) pins += `<circle class="guided-marker" cx="${point[0]}" cy="${point[1]}" r="12" pointer-events="none" aria-label="Current guided step"/>`;
       }
     }
   }
@@ -1264,7 +1297,42 @@ function chevrons(pts, spacing){
   return out;
 }
 
-function routeFloors(){ return ui.route?.status==='ok' ? new Set(ui.route.segments.map(s=>s.floor)) : new Set(); }
+function routePresentation(route){
+  const visible=new Set(), transferTargets=new Map(), entryOrigins=new Map();
+  for(let i=0;i<route.segments.length;){
+    visible.add(i);
+    if (!route.segments[i].exit){ i++; continue; }
+    const targetIndex=routeTransferTarget(route,i).targetIndex;
+    transferTargets.set(i,targetIndex);
+    if (targetIndex>i+1){
+      for(let skipped=i+1;skipped<targetIndex;skipped++) entryOrigins.set(skipped,i);
+      entryOrigins.set(targetIndex,i);
+    }
+    i=targetIndex;
+  }
+  return {visible,transferTargets,entryOrigins};
+}
+function routeTransferTarget(route,segmentIndex){
+  const segments=route.segments, start=segments[segmentIndex];
+  let targetIndex=segmentIndex+1;
+  if (start.exit?.kind==='lift'){
+    while(targetIndex<segments.length-1){
+      const intermediate=segments[targetIndex], previous=segments[targetIndex-1];
+      const continuesSameLift=previous.exit?.kind==='lift' &&
+        intermediate.exit?.kind==='lift' &&
+        previous.exit.group===start.exit.group &&
+        intermediate.exit.group===start.exit.group;
+      if (!continuesSameLift || intermediate.points.length>1) break;
+      targetIndex++;
+    }
+  }
+  return {targetIndex};
+}
+function routeFloors(){
+  if (ui.route?.status!=='ok') return new Set();
+  const presentation=routePresentation(ui.route);
+  return new Set([...presentation.visible].map(i=>ui.route.segments[i].floor));
+}
 function renderFloors(){
   const rf = routeFloors();
   const counts = {}; if (ui.showAll) for (const it of ui.showAll.items){ const e=getEntity(it.kind,it.id); if (e) counts[e.floor]=(counts[e.floor]||0)+1; }
@@ -1289,6 +1357,7 @@ function renderBuildings(){
 function switchProject(id){
   if (!store.projects[id]) return;
   stopPlayback(false);
+  if(ui.arduino) disconnectArduino();
   store.active = id; data = store.projects[id]; FLOORS = data.floors; saveData();
   Object.assign(ui, { selected:null, from:null, to:null, route:null, routeReq:null, stale:false, showAll:null, pick:null, avoidIds:[], keptIds:[], tool:'select', wDraft:[] });
   $('#in-from').value = ''; $('#in-to').value = '';
@@ -1317,8 +1386,11 @@ function renderBanner(){
     const current = buildSteps(ui.route).find(step =>
       step.segmentIndex===playback.segmentIndex && step.phase===playback.phase
     );
+    const transfer=playback.phase==='transfer' ? playbackTransferTarget(playback.segmentIndex) : null;
     const message = playback.status==='complete'
       ? `Arrived at ${ui.to?.label ?? 'your destination'}.`
+      : transfer?.targetIndex>playback.segmentIndex
+        ? `Take the ${transfer.group} ${transfer.direction} to ${floorName(transfer.floor)}.`
       : current?.text ?? 'Following your route.';
     const heading = playback.status==='waiting'
       ? `Changing floors in ${Math.ceil(playback.waitRemaining/1000)} second${playback.waitRemaining>1000?'s':''}`
@@ -1337,10 +1409,98 @@ function renderBanner(){
   if (route && !routeFloors().has(ui.floor)){
     // which floor next?
     const lvl = floorById(ui.floor).level;
-    const target = route.segments.reduce((a,s)=> Math.abs(floorById(s.floor).level-lvl) < Math.abs(floorById(a.floor).level-lvl) ? s : a);
+    const presentation=routePresentation(route);
+    const visibleSegments=[...presentation.visible].map(i=>route.segments[i]);
+    const target = visibleSegments.reduce((a,s)=> Math.abs(floorById(s.floor).level-lvl) < Math.abs(floorById(a.floor).level-lvl) ? s : a);
     b.className='banner'; b.innerHTML = `<span>Your route doesn’t use ${esc(floorName(ui.floor))}. It continues on ${esc(floorName(target.floor))}.</span><button type="button" data-goto="${target.floor}">Show ${esc(floorName(target.floor))}</button>`; b.hidden=false; return;
   }
   b.hidden = true;
+}
+
+function renderGuidedControls(){
+  const panel=$('#guided-controls');
+  panel.hidden=!ui.guidedMode || ui.route?.status!=='ok';
+  document.body.classList.toggle('guided-mode',ui.guidedMode);
+  if(panel.hidden) return;
+  const steps=buildSteps(ui.route), index=clamp(ui.guidedStepIndex,0,steps.length-1);
+  const step=steps[index], finished=index===steps.length-1;
+  const serialSupported='serial' in navigator;
+  const status=ui.arduino?.connected
+    ? 'Arduino connected. Send NEXT to advance.'
+    : serialSupported
+      ? 'Arduino not connected. Use the demo button to advance.'
+      : 'This browser does not support USB serial. Use the demo button to advance.';
+  panel.innerHTML=`<h2>Guided navigation · Step ${index+1} of ${steps.length}</h2>
+    <p class="guided-instruction" aria-live="assertive" aria-atomic="true">${esc(step.text)}</p>
+    <p class="guided-floor">${esc(floorName(step.floor))}${step.sub?`, ${esc(step.sub)}`:''}</p>
+    <p class="guided-status" role="status">${esc(status)}</p>
+    <div class="guided-actions">
+      <button type="button" data-demo-next ${finished?'disabled':''}>${finished?'Destination reached':'DEMO · Next step'}</button>
+      ${ui.arduino?.connected
+        ? '<button class="secondary" type="button" data-disconnect-arduino>Disconnect Arduino</button>'
+        : `<button class="secondary" type="button" data-connect-arduino ${serialSupported?'':'disabled'}>Connect Arduino via USB</button>`}
+    </div>`;
+}
+function advanceGuidedStep(){
+  if (!ui.guidedMode || ui.route?.status!=='ok') return;
+  const steps=buildSteps(ui.route);
+  if(ui.guidedStepIndex>=steps.length-1) return;
+  ui.guidedStepIndex++;
+  const step=steps[ui.guidedStepIndex];
+  if(step.floor!==ui.floor) switchFloor(step.floor);
+  render();
+}
+function handleArduinoLine(line){
+  if(line.trim().toUpperCase()==='NEXT') advanceGuidedStep();
+}
+async function connectArduino(){
+  if(!('serial' in navigator)){ toast('USB serial is not supported in this browser. Use the demo button instead.'); return; }
+  try {
+    const port=await navigator.serial.requestPort();
+    await port.open({baudRate:9600});
+    const connection={port,reader:null,connected:true,closing:false};
+    ui.arduino=connection; render();
+    const reader=port.readable.getReader();
+    connection.reader=reader;
+    const decoder=new TextDecoder();
+    let buffer='';
+    try {
+      while(true){
+        const {value,done}=await reader.read();
+        if(done) break;
+        buffer+=decoder.decode(value,{stream:true});
+        const lines=buffer.split(/\r?\n/);
+        buffer=lines.pop() ?? '';
+        lines.forEach(handleArduinoLine);
+      }
+    } finally {
+      reader.releaseLock();
+      if(connection.closing){
+        await port.close();
+      } else if(ui.arduino===connection){
+        ui.arduino=null;
+        render();
+        toast('Arduino disconnected. Use the demo button to continue.');
+      }
+    }
+  } catch(error) {
+    ui.arduino=null;
+    render();
+    toast(`Could not connect to the Arduino: ${error.message}`);
+  }
+}
+async function disconnectArduino(){
+  const connection=ui.arduino;
+  if(!connection) return;
+  connection.closing=true;
+  ui.arduino=null;
+  try {
+    if(connection.reader) await connection.reader.cancel();
+    else await connection.port.close();
+  } catch(error) {
+    toast(`Could not disconnect the Arduino cleanly: ${error.message}`);
+  }
+  render();
 }
 
 /* ---------------- sidebar: results ---------------- */
@@ -1400,8 +1560,9 @@ function renderResults(){
       <button class="btn small" type="button" data-keep="${m.id}">Keep this route</button>
       <button class="btn small" type="button" data-show-marker="${m.id}">Show on map</button></div></div>`;
   }).join('');
+  const transferCount=[...routePresentation(r).visible].filter(i=>r.segments[i].exit).length;
   el.innerHTML = staleNote + `<div class="res-head"><h2>Your route</h2><button class="btn small" type="button" data-clear-route>Clear</button></div>
-    <div class="summary"><strong>Route found</strong><span class="hint">${r.floorChanges?`${r.floorChanges} floor change${r.floorChanges>1?'s':''}`:'Same floor'}${ui.stepFree?', step-free':''}</span></div>
+    <div class="summary"><strong>Route found</strong><span class="hint">${transferCount?`${transferCount} transfer${transferCount>1?'s':''}`:'Same floor'}${ui.stepFree?', step-free':''}</span></div>
     ${issueHtml}
     <div class="acts" style="display:flex;gap:6px;margin:0 0 10px">
       <button class="btn primary" type="button" data-play-route>${playbackButtonLabel()}</button>
@@ -1410,16 +1571,20 @@ function renderResults(){
     <ol class="steps">${steps.map(s => `<li class="${s.change?'change':''} ${s.floor===ui.floor?'here':''} ${isPlaybackStep(s)?'active':''}" data-goto="${s.floor}" tabindex="0"><span>${esc(s.text)}<span class="sm">${esc(floorName(s.floor))}${s.sub?', '+esc(s.sub):''}</span></span></li>`).join('')}</ol>`;
 }
 function buildSteps(r){
-  const steps = []; const segs = r.segments;
+  const steps = []; const segs = r.segments, presentation=routePresentation(r);
   steps.push({ floor:segs[0].floor, text:`Start at ${ui.from.label}`, segmentIndex:0, phase:'start' });
-  segs.forEach((sg, i) => {
+  for (const i of presentation.visible){
+    const sg=segs[i];
     if (sg.exit){
       steps.push({ floor:sg.floor, text:`Follow the route to ${sg.exit.group}`, segmentIndex:i, phase:'walk' });
-      steps.push({ floor:sg.floor, change:true, text:`${sg.exit.kind==='lift'?'Take the':'Go'} ${sg.exit.dir==='up'?'up the ':'down the '}${sg.exit.group} to ${floorName(sg.exit.toFloor)}`, segmentIndex:i, phase:'transfer' });
+      const targetIndex=presentation.transferTargets.get(i) ?? i+1;
+      const targetFloor=segs[targetIndex]?.floor ?? sg.exit.toFloor;
+      const vertical=sg.exit.dir==='up'?'up':'down';
+      steps.push({ floor:sg.floor, change:true, text:`${sg.exit.kind==='lift'?'Take the':'Go'} ${vertical} ${sg.exit.group} to ${floorName(targetFloor)}`, segmentIndex:i, phase:'transfer' });
     } else {
       steps.push({ floor:sg.floor, text:`Follow the route to ${ui.to.label}`, segmentIndex:i, phase:'walk' });
     }
-  });
+  }
   steps.push({ floor:segs[segs.length-1].floor, text:`Arrive at ${ui.to.label}`, segmentIndex:segs.length-1, phase:'arrival' });
   return steps;
 }
@@ -1432,6 +1597,12 @@ function playbackButtonLabel(){
 function isPlaybackStep(step){
   const playback=ui.playback;
   return !!playback && step.segmentIndex===playback.segmentIndex && step.phase===playback.phase;
+}
+function guidedStepPosition(step,segment){
+  if(step.phase==='start') return segment.points[0];
+  if(step.phase==='transfer' || (step.phase==='walk' && segment.exit)) return segment.points[segment.points.length-1];
+  if(step.phase==='arrival') return segment.points[segment.points.length-1];
+  return segment.points[0];
 }
 function pointAlong(points, progress){
   if (!points.length) return [0,0];
@@ -1481,7 +1652,20 @@ function playRoute(){
 function segmentDuration(segment){
   let distance=0;
   for(let i=1;i<segment.points.length;i++) distance+=hyp(...segment.points[i-1],...segment.points[i]);
-  return distance===0 ? 0 : Math.max(1200,distance/220*1000);
+  return distance===0 ? 0 : Math.max(3000,distance/80*1000);
+}
+function playbackTransferTarget(segmentIndex){
+  const segments=ui.route?.segments;
+  const start=segments?.[segmentIndex];
+  if (!start?.exit) return null;
+  const targetIndex=routeTransferTarget(ui.route,segmentIndex).targetIndex;
+  const target=segments[targetIndex];
+  return {
+    targetIndex,
+    floor:target?.floor ?? start.exit.toFloor,
+    group:start.exit.group,
+    direction:start.exit.dir==='up'?'up':'down',
+  };
 }
 function schedulePlaybackFrame(playback){
   playback.frame=setTimeout(()=>{
@@ -1508,10 +1692,13 @@ function schedulePlaybackFrame(playback){
   },50);
 }
 function scheduleFloorChange(playback){
+  const transfer=playbackTransferTarget(playback.segmentIndex);
+  playback.transferTargetIndex=transfer?.targetIndex ?? playback.segmentIndex+1;
+  playback.waitRemaining=playback.waitRemaining ?? 1000;
   playback.status='waiting'; playback.waitStartedAt=performance.now();
   playback.timer=setTimeout(()=>{
     if (ui.playback!==playback || playback.status!=='waiting') return;
-    playback.segmentIndex++;
+    playback.segmentIndex=playback.transferTargetIndex;
     playback.progress=0; playback.phase='walk'; playback.status='playing'; playback.timer=null;
     switchFloor(ui.route.segments[playback.segmentIndex].floor);
     render(); schedulePlaybackFrame(playback);
@@ -1854,6 +2041,9 @@ document.addEventListener('click', async ev => {
   if (ds.goto && !t.closest('#map')){ setFloor(ds.goto); return; }
   if ('playRoute' in ds){ playRoute(); return; }
   if ('stopPlayback' in ds){ stopPlayback(); return; }
+  if ('demoNext' in ds){ advanceGuidedStep(); return; }
+  if ('connectArduino' in ds){ await connectArduino(); return; }
+  if ('disconnectArduino' in ds){ await disconnectArduino(); return; }
   if (ds.tool){ ui.tool = ui.tool===ds.tool && ds.tool!=='select' ? 'select' : ds.tool; ui.pick = null; ui.wDraft = []; render(); return; }
   if ('wnew' in ds){ ui.wDraft = []; render(); return; }
   if ('wundo' in ds){
@@ -1991,6 +2181,7 @@ document.addEventListener('click', async ev => {
   if ('clearAll' in ds){ ui.showAll = null; render(); return; }
   if ('clearRoute' in ds){
     stopPlayback(false);
+    await disconnectArduino();
     ui.route = null;
     ui.routeReq = null;
     ui.from = null;
@@ -2040,6 +2231,13 @@ $('#swap').onclick = () => { [ui.from, ui.to] = [ui.to, ui.from]; $('#in-from').
 $('#sel-card').innerHTML = CARDS.map(c => `<option value="${c.id}">${esc(c.label)}</option>`).join('');
 $('#sel-card').onchange = e => { ui.card = e.target.value; prefsChanged(); };
 $('#tg-step').onchange = e => { ui.stepFree = e.target.checked; prefsChanged(); };
+$('#tg-guided').onchange = async e => {
+  ui.guidedMode=e.target.checked;
+  ui.guidedStepIndex=0;
+  stopPlayback(false);
+  if(!ui.guidedMode) await disconnectArduino();
+  render();
+};
 function prefsChanged(){ if (ui.route && ui.from && ui.to) findRoute(); else render(); }
 
 /* ---------------- dialog form helper ---------------- */

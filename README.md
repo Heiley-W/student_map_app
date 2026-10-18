@@ -71,7 +71,15 @@ The extractor creates same-floor edges only. `backend/data/floor_transfers.json`
 
 Edges marked `blocked: true` are excluded. When step-free routing is requested, the router avoids all `stairs` and `staircase` nodes and only permits lift transfers. `wheelchair_accessible` edge values do not affect routing.
 
-The route panel's **Play route** control runs a simulated marker along the returned route, updates the active direction, and waits one second at each stair/lift transfer before switching floors. This is a preview only; it does not track a person's live indoor position.
+The route panel's **Play route** control runs a simulated marker along the returned route, updates the active direction, and waits one second at each stair/lift transfer before switching floors. Consecutive stops on the same lift are combined into a direct floor change, skipping intermediate landing views; stair routes still visit each floor. Walking playback is intentionally slow for readability. This is a preview only; it does not track a person's live indoor position.
+
+### Guided mode and Arduino step signals
+
+Turn on **Visually impaired guided mode** after calculating a route. The large top-right panel announces one instruction at a time and changes floor only when the next step is advanced. **DEMO · Next step** advances it manually; when an Arduino is connected, a newline-terminated `NEXT` serial message advances the same step. The demo button remains available as a fallback.
+
+The current prototype uses browser USB serial (`navigator.serial`) at 9600 baud, so open the app in a Web Serial-capable desktop browser such as Chrome or Edge over `localhost` or HTTPS. Select **Connect Arduino via USB** and grant access to its serial port. Upload `arduino/pythagoras_step_signal.ino` to the board, connect a normally-open push button between digital pin 2 and GND, and press it once per instruction. The sketch debounces the button and sends `NEXT` on each press. Disconnect the Arduino in the panel before using its port in another application. This browser-to-USB path is a prototype; for a production wearable or wireless navigator, use a secured Bluetooth or network bridge and validate it with users who rely on accessible navigation.
+
+See [CONNECTION.md](CONNECTION.md) for the physical wiring, Arduino upload, browser setup, and troubleshooting steps.
 
 An edge with `requires_id_card: null` is open to every card category, including visitors. If it is `true`, visitors are blocked; student cards are also blocked from 18:00 local time onward, while staff and postgraduate cards remain allowed. The frontend sends the selected card category and its current local time. This self-selected value does not authenticate the user or prove real door access.
 
