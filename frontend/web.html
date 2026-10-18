@@ -2446,7 +2446,11 @@ document.addEventListener('click', async ev => {
   }
   if ('redtag' in ds){
     const s = ui.selected; const e = getEntity(s.kind,s.id);
-    const v = await form({ title:'Mark out of order', desc:`When this place has a route-node mapping, its connected routes will be blocked.`, submit:'Mark out of order', fields:[
+    const connector = s.kind==='transition' ? data.groups[e.group] : null;
+    const desc = connector
+      ? `Marking this ${connector.kind} out of order blocks the ${connector.name.toLowerCase()} on every floor.`
+      : 'When this place has a route-node mapping, its connected routes will be blocked.';
+    const v = await form({ title:'Mark out of order', desc, submit:'Mark out of order', fields:[
       {name:'title', label:'What’s wrong?', type:'text', required:true, value: s.kind==='amenity' ? `${AMENITY_TYPES[e.type].label} out of order` : 'Closed'},
       {name:'detail', label:'Details', type:'textarea'} ]});
     if (!v) return;
@@ -2455,7 +2459,7 @@ document.addEventListener('click', async ev => {
     if (ui.route) await refreshRoute();
     render();
     toast(routeStatusUpdated
-      ? 'Marked out of order; connected graph edges are blocked.'
+      ? connector ? `Marked out of order; the ${connector.name.toLowerCase()} is blocked on every floor.` : 'Marked out of order; connected graph edges are blocked.'
       : 'Marked locally; this place has no backend route-node mapping.');
     return;
   }

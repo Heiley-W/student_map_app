@@ -158,6 +158,18 @@ def _save_blocked_nodes(blocked_nodes):
 
 
 def _apply_node_blocks(map_data, transfers, blocked_nodes):
+    blocked_nodes = set(blocked_nodes)
+    blocked_connector_groups = {
+        (transfer.get("kind"), transfer.get("group"))
+        for transfer in transfers
+        if transfer.get("kind") in {"lift", "stairs"}
+        and transfer.get("group")
+        and (transfer.get("from") in blocked_nodes or transfer.get("to") in blocked_nodes)
+    }
+    for transfer in transfers:
+        if (transfer.get("kind"), transfer.get("group")) in blocked_connector_groups:
+            blocked_nodes.update((transfer.get("from"), transfer.get("to")))
+
     if "pages" in map_data:
         edges = (
             edge
