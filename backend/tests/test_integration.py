@@ -14,6 +14,7 @@ from routing import find_route
 ROOT = Path(__file__).resolve().parents[2]
 MAP_PATH = ROOT / "gemini-map" / "map_graph.json"
 TRANSFER_PATH = Path(__file__).resolve().parents[1] / "data" / "floor_transfers.json"
+NODE_STATUS_PATH = Path(__file__).resolve().parents[1] / "data" / "node_status.json"
 NODE_MAP_PATH = ROOT / "frontend" / "route-node-map.json"
 CHECKPOINT_MAP_PATH = ROOT / "gemini-map" / "map_graph.checkpoint.json"
 
@@ -97,6 +98,7 @@ class RoutingTests(unittest.TestCase):
             for floor in config["amenities"].values()
             for node_id in floor.values()
         )
+        mapped_ids.discard("auto")
 
         self.assertTrue(mapped_ids)
         self.assertEqual(mapped_ids - self.node_ids, set())
@@ -181,6 +183,19 @@ class RoutingTests(unittest.TestCase):
             with self.subTest(transfer=transfer["id"]):
                 self.assertIn(transfer["from"], self.node_ids)
                 self.assertIn(transfer["to"], self.node_ids)
+
+    def test_default_lift_status_is_unblocked(self):
+        blocked_nodes = set(
+            json.loads(NODE_STATUS_PATH.read_text(encoding="utf-8"))["blocked_nodes"]
+        )
+        lift_nodes = {
+            node_id
+            for transfer in self.transfers
+            if transfer["kind"] == "lift"
+            for node_id in (transfer["from"], transfer["to"])
+        }
+
+        self.assertEqual(blocked_nodes & lift_nodes, set())
 
     def test_filters_require_confirmed_accessibility_and_card(self):
         graph = {
@@ -484,6 +499,76 @@ class RoutingApiTests(unittest.TestCase):
         main._apply_node_blocks(map_data, transfers, {"a"})
 
         self.assertTrue(transfers[0]["blocked"])
+
+    def test_blocking_and_reopening_a_lift_updates_every_floor(self):
+        graph = {
+            "nodes": [
+                {"id": f"corridor-{floor}", "kind": "corridor", "page": floor}
+                for floor in range(1, 4)
+            ] + [
+                {"id": f"lift-{floor}", "kind": "lift", "page": floor}
+                for floor in range(1, 4)
+            ],
+            "edges": [
+                {"from": f"corridor-{floor}", "to": f"lift-{floor}"}
+                for floor in range(1, 4)
+            ],
+        }
+        transfers = [
+            {
+                "from": f"lift-{floor}",
+                "to": f"lift-{floor + 1}",
+                "kind": "lift",
+                "group": "Central lift",
+            }
+            for floor in range(1, 3)
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            map_path = root / "map.json"
+            transfer_path = root / "transfers.json"
+            status_path = root / "node_status.json"
+            map_path.write_text(json.dumps(graph), encoding="utf-8")
+            transfer_path.write_text(
+                json.dumps({"transfers": transfers}),
+                encoding="utf-8",
+            )
+            status_path.write_text('{"blocked_nodes":[]}', encoding="utf-8")
+
+            with (
+                patch.object(main, "MAP_PATH", map_path),
+                patch.object(main, "TRANSFER_PATH", transfer_path),
+                patch.object(main, "NODE_STATUS_PATH", status_path),
+            ):
+                blocked = self.client.put(
+                    "/admin/node-status",
+                    json={"node_id": "lift-2", "out_of_order": True},
+                )
+                blocked_nodes = json.loads(
+                    status_path.read_text(encoding="utf-8")
+                )["blocked_nodes"]
+                blocked_route = self.client.post(
+                    "/route",
+                    json={"start": "corridor-1", "destination": "corridor-3"},
+                )
+                reopened = self.client.put(
+                    "/admin/node-status",
+                    json={"node_id": "lift-3", "out_of_order": False},
+                )
+                open_nodes = json.loads(
+                    status_path.read_text(encoding="utf-8")
+                )["blocked_nodes"]
+                open_route = self.client.post(
+                    "/route",
+                    json={"start": "corridor-1", "destination": "corridor-3"},
+                )
+
+        self.assertEqual(blocked.status_code, 200)
+        self.assertEqual(set(blocked_nodes), {"lift-1", "lift-2", "lift-3"})
+        self.assertEqual(blocked_route.json()["status"], "no_route")
+        self.assertEqual(reopened.status_code, 200)
+        self.assertEqual(open_nodes, [])
+        self.assertEqual(open_route.json()["status"], "ok")
 
     def test_blocked_stairs_or_lift_landing_blocks_connector_on_every_floor(self):
         for kind, prefix, group in (

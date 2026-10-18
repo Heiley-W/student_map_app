@@ -260,11 +260,26 @@ def update_node_status(request: NodeStatusRequest):
             detail=f"Unknown route node ID: {request.node_id}",
         )
 
+    transfers = _load_transfers()
+    connector_groups = {
+        (transfer.get("kind"), transfer.get("group"))
+        for transfer in transfers
+        if transfer.get("kind") in {"lift", "stairs"}
+        and transfer.get("group")
+        and request.node_id in {transfer.get("from"), transfer.get("to")}
+    }
+    affected_nodes = {
+        node_id
+        for transfer in transfers
+        if (transfer.get("kind"), transfer.get("group")) in connector_groups
+        for node_id in (transfer.get("from"), transfer.get("to"))
+    } or {request.node_id}
+
     blocked_nodes = _load_blocked_nodes()
     if request.out_of_order:
-        blocked_nodes.add(request.node_id)
+        blocked_nodes.update(affected_nodes)
     else:
-        blocked_nodes.discard(request.node_id)
+        blocked_nodes.difference_update(affected_nodes)
     _save_blocked_nodes(blocked_nodes)
     return {
         "node_id": request.node_id,

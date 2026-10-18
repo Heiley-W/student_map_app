@@ -638,10 +638,6 @@ function seedPhysics(){
   const markers = [];
   for (const d of KEYCARD_DOORS) markers.push({ id:d.id, kind:'access', status:'active', floor:d.floor, x:d.x, y:d.y,
     title:'Keycard access', detail:d.detail, allowed:['student','postgrad','staff'], windowCards:[], by:'admin' });
-  for (const f of floors){
-    markers.push({ id:`m-lift-${f.id}`, kind:'closure', status:'active', targetKind:'transition', targetId:`t-LM-${f.id}`,
-      title:'Out of service for maintenance', detail:'The central lift is broken. Use another lift or the stairs.', by:'admin' });
-  }
   const suggestions = [
     { id:'s-1', targetKind:'room', targetId:'r-E-E3-E7', text:'This room is often cold.', tag:'', status:'pending', at:now.toISOString() },
     { id:'s-2', targetKind:'room', targetId:'r-A-A20', text:'Lots of free sockets along the back wall.', tag:'charging', status:'pending', at:now.toISOString() },
@@ -674,6 +670,11 @@ function saveData(){
   catch(e){ if (!saveWarned){ saveWarned = true; setTimeout(() => toast('This browser is out of storage space, so recent changes will be lost on reload. Try smaller map images.'), 0); } return false; }
 }
 let store = loadStore() || seedStore();
+if (!store.liftDefaultOpen1){
+  const ph = store.projects.physics;
+  if (ph) ph.markers = ph.markers.filter(m => !/^m-lift-[A-E]$/.test(m.id));
+  store.liftDefaultOpen1 = true;
+}
 // Physics: A is the top floor and E the bottom (fixes data saved before this change)
 if (!store.flipped){
   const ph = store.projects.physics, a = ph?.floors.find(f => f.id==='A'), e = ph?.floors.find(f => f.id==='E');
