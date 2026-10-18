@@ -1,0 +1,124 @@
+{
+  "transfers": [
+    {
+      "id": "west-stairs-page-1-to-2",
+      "from": "p001_ground_floor_stairs_west",
+      "to": "p002_first_floor_stairs_west",
+      "group": "West stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "west-stairs-page-2-to-3",
+      "from": "p002_first_floor_stairs_west",
+      "to": "p003_second_floor_stairs_1",
+      "group": "West stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "west-stairs-page-3-to-4",
+      "from": "p003_second_floor_stairs_1",
+      "to": "p004_third_floor_stairs_west",
+      "group": "West stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "west-stairs-page-4-to-5",
+      "from": "p004_third_floor_stairs_west",
+      "to": "p005_fourth_floor_stairs_nw",
+      "group": "West stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "east-stairs-page-1-to-2",
+      "from": "p001_ground_floor_stairs_east",
+      "to": "p002_first_floor_stairs_east",
+      "group": "East stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "east-stairs-page-2-to-3",
+      "from": "p002_first_floor_stairs_east",
+      "to": "p003_second_floor_stairs_2",
+      "group": "East stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "east-stairs-page-3-to-4",
+      "from": "p003_second_floor_stairs_2",
+      "to": "p004_third_floor_stairs_east",
+      "group": "East stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "east-stairs-page-4-to-5",
+      "from": "p004_third_floor_stairs_east",
+      "to": "p005_fourth_floor_stairs_east",
+      "group": "East stairs",
+      "kind": "stairs",
+      "wheelchair_accessible": false
+    },
+    {
+      "id": "central-lift-page-1-to-2",
+      "from": "p001_ground_floor_lift_unlabelled",
+      "to": "p002_first_floor_lift_central",
+      "group": "Central lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "central-lift-page-2-to-3",
+      "from": "p002_first_floor_lift_central",
+      "to": "p003_second_floor_lift_1",
+      "group": "Central lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "central-lift-page-3-to-4",
+      "from": "p003_second_floor_lift_1",
+      "to": "p004_third_floor_lift_central",
+      "group": "Central lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "central-lift-page-4-to-5",
+      "from": "p004_third_floor_lift_central",
+      "to": "p005_fourth_floor_lift_central",
+      "group": "Central lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "east-lift-page-2-to-3",
+      "from": "p002_first_floor_lift_east",
+      "to": "p003_second_floor_lift_2",
+      "group": "East lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "east-lift-page-3-to-4",
+      "from": "p003_second_floor_lift_2",
+      "to": "p004_third_floor_lift_east",
+      "group": "East lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    },
+    {
+      "id": "east-lift-page-4-to-5",
+      "from": "p004_third_floor_lift_east",
+      "to": "p005_fourth_floor_lift_east",
+      "group": "East lift",
+      "kind": "lift",
+      "wheelchair_accessible": true
+    }
+  ]
+}

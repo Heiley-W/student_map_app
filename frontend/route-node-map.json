@@ -1,0 +1,152 @@
+{
+  "floorPages": {
+    "E": 1,
+    "D": 2,
+    "C": 3,
+    "B": 4,
+    "A": 5
+  },
+  "rooms": {
+    "E": {
+      "E20": "p001_ground_floor_room_e20",
+      "E18": "p001_ground_floor_room_e18",
+      "E16": "p001_ground_floor_room_e16",
+      "E14": "p001_ground_floor_room_e14_m",
+      "E10": "p001_ground_floor_room_e10",
+      "E8": "p001_ground_floor_room_e8",
+      "E6": "p001_ground_floor_room_e6",
+      "E4": "p001_ground_floor_room_e4",
+      "E2": "p001_ground_floor_room_e2",
+      "QDT": "p001_ground_floor_room_qdt",
+      "E15": "p001_ground_floor_room_e15",
+      "E3/E7": "p001_ground_floor_room_e3_e7",
+      "E1": "p001_ground_floor_room_e1"
+    },
+    "D": {
+      "D14": "p002_first_floor_room_d14",
+      "D12": "p002_first_floor_room_d12",
+      "D11": "p002_first_floor_room_d11",
+      "D16": "p002_first_floor_room_d16",
+      "D18": "p002_first_floor_room_d18",
+      "D20": "p002_first_floor_room_d20",
+      "D22": "p002_first_floor_room_d22",
+      "D17A": "p002_first_floor_room_d17a",
+      "D17": "p002_first_floor_room_d17"
+    },
+    "C": {
+      "C14": "p003_second_floor_room_c14",
+      "C16": "p003_second_floor_room_c16",
+      "C18": "p003_second_floor_room_c18",
+      "C20": "p003_second_floor_room_c20",
+      "C22": "p003_second_floor_room_c22"
+    },
+    "B": {
+      "B14": "p004_third_floor_room_b14",
+      "B12": "p004_third_floor_room_b12",
+      "B12A": "p004_third_floor_room_b12a",
+      "B16": "p004_third_floor_room_b16",
+      "B18": "p004_third_floor_room_b18",
+      "B20": "p004_third_floor_room_b20",
+      "B22": "p004_third_floor_room_b22"
+    },
+    "A": {
+      "A22": "p005_fourth_floor_room_a22",
+      "A20": "p005_fourth_floor_room_a20",
+      "A18": "p005_fourth_floor_room_a18",
+      "A16": "p005_fourth_floor_room_a16",
+      "A14": "p005_fourth_floor_room_a14",
+      "A12": "p005_fourth_floor_room_a12",
+      "A10": "p005_fourth_floor_room_a10",
+      "A8": "p005_fourth_floor_room_a8",
+      "A6": "p005_fourth_floor_room_a6",
+      "A4": "p005_fourth_floor_room_a4",
+      "A2": "p005_fourth_floor_room_a2",
+      "A24": "p005_fourth_floor_room_a24",
+      "A26": "p005_fourth_floor_room_a26",
+      "A28": "p005_fourth_floor_room_a28",
+      "A30": "p005_fourth_floor_room_a30",
+      "A19": "p005_fourth_floor_room_a19",
+      "A17": "p005_fourth_floor_room_a17",
+      "A15": "p005_fourth_floor_room_a15",
+      "A13": "p005_fourth_floor_room_a13",
+      "A9": "p005_fourth_floor_room_a9",
+      "A7": "p005_fourth_floor_room_a7",
+      "A5": "p005_fourth_floor_room_a5",
+      "A1/3": "p005_fourth_floor_room_a1_3"
+    }
+  },
+  "connectors": {
+    "E": {
+      "west_stairs": "p001_ground_floor_stairs_west",
+      "east_stairs": "p001_ground_floor_stairs_east",
+      "central_lift": "p001_ground_floor_lift_unlabelled"
+    },
+    "D": {
+      "west_stairs": "p002_first_floor_stairs_west",
+      "east_stairs": "p002_first_floor_stairs_east",
+      "central_lift": "p002_first_floor_lift_central",
+      "east_lift": "p002_first_floor_lift_east"
+    },
+    "C": {
+      "west_stairs": "p003_second_floor_stairs_1",
+      "east_stairs": "p003_second_floor_stairs_2",
+      "central_lift": "p003_second_floor_lift_1",
+      "east_lift": "p003_second_floor_lift_2"
+    },
+    "B": {
+      "west_stairs": "p004_third_floor_stairs_west",
+      "east_stairs": "p004_third_floor_stairs_east",
+      "central_lift": "p004_third_floor_lift_central",
+      "east_lift": "p004_third_floor_lift_east"
+    },
+    "A": {
+      "west_stairs": "p005_fourth_floor_stairs_nw",
+      "east_stairs": "p005_fourth_floor_stairs_east",
+      "central_lift": "p005_fourth_floor_lift_central",
+      "east_lift": "p005_fourth_floor_lift_east"
+    }
+  },
+  "amenities": {
+    "D": {
+      "Lab 1": "p002_first_floor_room_large_hall"
+    },
+    "C": {
+      "Lab 2": "p003_second_floor_room_u10"
+    },
+    "B": {
+      "Lab 3": "p004_third_floor_room_lab_3"
+    }
+  },
+  "outdoorEntrances": [
+    {
+      "id": "east-ground-floor-entrance",
+      "name": "East entrance",
+      "latitude": 51.525211347544165,
+      "longitude": -0.13377584224039707,
+      "nodeId": "p001_ground_floor_door_exit_east"
+    },
+    {
+      "id": "lift-side-entrance",
+      "name": "Lift-side entrance",
+      "latitude": 51.5254016923619,
+      "longitude": -0.13344461925910714,
+      "nodeId": "p001_ground_floor_lift_unlabelled"
+    },
+    {
+      "id": "qdt-side-entrance",
+      "name": "QDT entrance",
+      "latitude": 51.52554493883179,
+      "longitude": -0.13307721783151324,
+      "nodeId": "p001_ground_floor_room_qdt",
+      "allowedCardTypes": ["staff", "postgrad"]
+    }
+  ],
+  "demoOriginQuery": "Euston Square Underground Station, London, UK",
+  "transforms": {
+    "E": { "x": [14.6287, -1.6835], "y": [7.9961, 9.2718] },
+    "D": { "x": [14.5417, 1.0404], "y": [8.1273, 4.9524] },
+    "C": { "x": [14.0764, 4.1401], "y": [8.1468, 4.8752] },
+    "B": { "x": [14.4903, 1.9559], "y": [8.1024, 5.9742] },
+    "A": { "x": [14.4718, 6.6439], "y": [8.1106, 7.2256] }
+  }
+}

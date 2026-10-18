@@ -683,8 +683,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": true,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -694,7 +694,7 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
+          "wheelchair_accessible": false,
           "requires_id_card": null,
           "blocked": false,
           "confidence": 0.8,
@@ -1288,8 +1288,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": true,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -1902,8 +1902,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -2199,8 +2199,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -2210,8 +2210,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -2967,8 +2967,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -2978,8 +2978,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -3253,8 +3253,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -3264,8 +3264,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -3847,6 +3847,16 @@
           "floor": "Third floor",
           "confidence": 0.9,
           "notes": ""
+        },
+        {
+          "id": "p004_third_floor_room_lab_3",
+          "name": "Lab 3",
+          "kind": "room",
+          "x": 63.6,
+          "y": 47.5,
+          "floor": "Third floor",
+          "confidence": 0.7,
+          "notes": "Approximate position from the existing HTML Lab 3 marker; connected to the nearest left corridor junction and right east-deck junction. Verify against the floor plan."
         }
       ],
       "edges": [
@@ -4062,7 +4072,7 @@
         {
           "time_seconds": null,
           "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -4072,8 +4082,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -4083,8 +4093,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.95,
           "notes": "",
@@ -4254,6 +4264,28 @@
           "confidence": 0.95,
           "notes": "",
           "from": "p004_third_floor_stairs_east",
+          "to": "p004_third_floor_corr_east_stairs_junc",
+          "floor": "Third floor"
+        },
+        {
+          "time_seconds": null,
+          "wheelchair_accessible": null,
+          "requires_id_card": null,
+          "blocked": false,
+          "confidence": 0.7,
+          "notes": "Approximate Lab 3 west-side connection inferred from the HTML marker.",
+          "from": "p004_third_floor_room_lab_3",
+          "to": "p004_third_floor_corr_ne_corner",
+          "floor": "Third floor"
+        },
+        {
+          "time_seconds": null,
+          "wheelchair_accessible": null,
+          "requires_id_card": null,
+          "blocked": false,
+          "confidence": 0.7,
+          "notes": "Approximate Lab 3 east-side connection inferred from the HTML marker.",
+          "from": "p004_third_floor_room_lab_3",
           "to": "p004_third_floor_corr_east_stairs_junc",
           "floor": "Third floor"
         }
@@ -5226,8 +5258,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -5237,8 +5269,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
@@ -5248,8 +5280,8 @@
         },
         {
           "time_seconds": null,
-          "wheelchair_accessible": null,
-          "requires_id_card": null,
+          "wheelchair_accessible": false,
+          "requires_id_card": false,
           "blocked": false,
           "confidence": 0.8,
           "notes": "",
